@@ -53,3 +53,22 @@ export interface VsRow {
   cost: number | null; erp_qty: number; erp_value: number | null; system_open_qty: number; diff_qty: number;
   since_date: string | null; age_days: number | null; match_status: 'not_in_system' | 'partly_explained' | 'receipt_not_uploaded' | 'explained';
 }
+
+export type BacklogAction = 'to_store' | 'to_dc' | 'write_off' | 'investigate';
+export interface BacklogActionRow {
+  id: string; location_code: string; item_code: string; action: BacklogAction; qty: number; note: string | null;
+  status: 'pending' | 'approved' | 'rejected'; requested_by: string | null; requested_at: string; decided_by: string | null;
+  decided_at: string | null; decision_note: string | null; site_id: number; erp_name: string; item_name: string | null; cost: number | null;
+  latest_snapshot_date: string | null; latest_erp_qty: number; cleared: boolean;
+}
+export interface ReceiveCount {
+  id: string; dispatch_id: string; site_id: number; expected_qty: number; counted_qty: number; short_lines: number; over_lines: number;
+  note: string | null; counted_by: string | null; counted_at: string;
+}
+export interface PeriodLock { month: string; locked_by: string | null; locked_at: string; note: string | null; summary: MonthSummary | null }
+export interface MonthSummary {
+  month: string; plans: number; legs: number; planned_qty: number; legs_not_sent: number; stvs: number; sent_qty: number; received_qty: number;
+  open_qty: number; open_value: number; problems: number; problems_open: number; problems_approved: number; approved_loss_value: number;
+  stuck_qty: number; stuck_value: number;
+  stores: { site_id: number; sent_qty: number; received_qty: number; open_qty: number; problems_open: number }[];
+}

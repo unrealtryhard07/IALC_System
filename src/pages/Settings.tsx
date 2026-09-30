@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Alert, Badge, Card, Field, PageHeader, Tabs } from '../components/ui';
 import { useAuth } from '../lib/auth';
 import { DISC_KIND } from '../lib/labels';
@@ -9,7 +10,8 @@ import type { DiscKind, ErpLocation, ReasonCode, Site } from '../lib/types';
 type Tab = 'sla' | 'locations' | 'stores' | 'reasons';
 
 export default function Settings() {
-  const [tab, setTab] = useState<Tab>('sla');
+  const [sp] = useSearchParams();
+  const [tab, setTab] = useState<Tab>((sp.get('tab') as Tab) || 'sla');
   return (
     <div>
       <PageHeader title="Settings" />
@@ -40,7 +42,10 @@ function Sla() {
   const { msg, run } = useSaver();
   const [d, setD] = useState(a.dispatchSla);
   const [r, setR] = useState(a.receiptSla);
+  const [mode, setMode] = useState(String(a.settings.stv_numbering ?? 'global'));
+  const [gap, setGap] = useState(Number(a.settings.stv_gap_max ?? 30));
   return (
+    <div className="space-y-5">
     <Card title="Service levels" className="max-w-xl">
       <div className="space-y-3">
         <Field label="Dispatch SLA (days after plan date)" hint="A plan not dispatched within this many days shows as late."><input className="input w-32" type="number" min={0} value={d} onChange={(e) => setD(Number(e.target.value))} /></Field>
@@ -49,6 +54,21 @@ function Sla() {
         {msg && <Alert tone={msg.tone}>{msg.text}</Alert>}
       </div>
     </Card>
+    <Card title="STV number check" className="max-w-xl">
+      <div className="space-y-3">
+        <Field label="How the ERP numbers STVs" hint="Used by STV checks to find missing numbers.">
+          <select className="input" value={mode} onChange={(e) => setMode(e.target.value)}>
+            <option value="global">One number series for the whole company</option>
+            <option value="per_store">Each sending ERP store has its own series</option>
+          </select>
+        </Field>
+        <Field label="Biggest gap to report" hint="A jump bigger than this is treated as a different number series, not missing STVs.">
+          <input className="input w-32" type="number" min={1} value={gap} onChange={(e) => setGap(Number(e.target.value))} />
+        </Field>
+        <button className="btn-primary" onClick={() => run(() => supabase.from('settings').upsert([{ key: 'stv_numbering', value: mode }, { key: 'stv_gap_max', value: gap }]))}>Save</button>
+      </div>
+    </Card>
+    </div>
   );
 }
 

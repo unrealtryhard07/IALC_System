@@ -18,7 +18,7 @@ export const loginToEmail = (login: string) => {
 export function friendlyError(e: unknown): string {
   const msg = e instanceof Error ? e.message : typeof e === 'object' && e && 'message' in e ? String((e as PostgrestError).message) : String(e);
   return msg
-    .replace(/^(NOT_ALLOWED|DUPLICATE|UNKNOWN_LOCATION):\s*/, '')
+    .replace(/^(NOT_ALLOWED|DUPLICATE|UNKNOWN_LOCATION|LOCKED):\s*/, '')
     .replace(/^NOT_ALLOWED$/, 'You do not have permission to do this.');
 }
 

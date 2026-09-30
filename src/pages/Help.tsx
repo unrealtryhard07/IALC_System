@@ -25,12 +25,14 @@ export default function Help() {
       <Card title={isStore ? 'For store staff' : 'For store staff (what your stores see)'}>
         <div className="space-y-2">
           <Q q="I sent stock to another store. What do I do?">
+            <p>0. Open the allocation and press <b>Pick list</b> - print it and pick exactly those quantities.</p>
             <p>1. Make the STV in the ERP as usual (<b>your D.S → the other store's Allocation</b>).</p>
             <p>2. Open <b>Upload STV</b>, drop the PDF. The system shows <b>"Sent"</b> and compares it with the plan.</p>
             <p>3. Press <b>Save</b>. If something was short or not sent, go to <b>Problems to explain</b> and pick a reason.</p>
           </Q>
           <Q q="Stock arrived at my store. What do I do?">
-            <p>1. Count what arrived. Make the STV in the ERP <b>(your Allocation → your D.S)</b> for what you really received.</p>
+            <p>1. Open <b>Receive stock</b> on your phone and pick the transfer. Tap <b>All</b> on every line that is complete, type the count where it is not, or scan barcodes (each scan adds 1). Press <b>Save count</b>.</p>
+            <p>1b. The app shows the exact list to key in: make the STV in the ERP <b>(your Allocation → your D.S)</b> with the counted quantities.</p>
             <p>2. Open <b>Upload STV</b>, drop the PDF. The system shows <b>"Received"</b> and ticks the transfer it belongs to.</p>
             <p>3. Press <b>Save</b>. Anything missing becomes a problem to explain.</p>
             <p className="rounded bg-amber-50 p-2 text-amber-900">Do this the same day. Stock that is not received stays invisible in the app and can expire.</p>
@@ -44,6 +46,18 @@ export default function Help() {
           <Q q="The upload says 'Already uploaded' or 'belongs to another store'.">
             <p><b>Already uploaded</b>: that STV number is already in the system - nothing to do.</p>
             <p><b>Belongs to another store</b>: only the sending store uploads a "Sent" STV, and only the receiving store uploads a "Received" STV.</p>
+          </Q>
+          <Q q="What is the bell at the top?">
+            <p>Everything waiting for you: transfers to receive, allocations to send, problems to explain, and explanations head office rejected. Click a line to go straight there.</p>
+          </Q>
+          <Q q="How do I find an STV or an item quickly?">
+            <p>Type in the search box at the top (or press <b>/</b>): an STV number, a plan number (AL-…), an item code, a barcode or part of the item name. An item page shows where that item is on its way, stuck, planned and every recent STV.</p>
+          </Q>
+          <Q q="What is 'Old stock clean-up'?">
+            <p>Stock that has sat in your Allocation store for a long time. Tick the items, choose what happens (receive into the store, return to DC, write off, or investigate) and send it to head office. Once approved, make the transfer in the ERP. When the next ERP report no longer shows the item it becomes <b>Cleared</b>.</p>
+          </Q>
+          <Q q="The upload says the month is closed.">
+            <p>Head office has closed that month, so nothing dated in it can be added. Ask head office - they can reopen it.</p>
           </Q>
           <Q q="I uploaded the wrong file.">
             <p>Tell head office - they can cancel (void) it and you upload the correct one.</p>
@@ -62,6 +76,18 @@ export default function Help() {
             </Q>
             <Q q="How do I find old stock stuck in the Allocation stores?">
               <p>Export the stock report of each Allocation store from the ERP (Excel/CSV with item code and quantity). Open <b>Stuck stock check → Upload ERP report</b>. Items marked <b>Unknown stuck stock</b> are the ones to act on. Do this weekly.</p>
+            </Q>
+            <Q q="Where are the charts?">
+              <p><b>Dashboard</b> has all charts: status, planned vs sent vs received, the monthly <b>accuracy trend per store</b> (sending exactly what was planned / receiving everything that was sent), weekly flow, ageing, reasons, and how the stuck stock in the virtual stores goes down over time.</p>
+            </Q>
+            <Q q="How does the old stock clean-up work?">
+              <p><b>Stuck stock &amp; clean-up → Clean-up</b>. Stores (or you) decide per item; you approve in <b>Waiting for approval</b>. Your own decisions are approved at once. Download the <b>Approved</b> list for the ERP team. Every ERP report you upload afterwards moves the cleared items out and the progress bar up.</p>
+            </Q>
+            <Q q="What do the STV checks find?">
+              <p><b>More → STV checks</b>: the same transfer uploaded twice under two numbers (same route, within 3 days, identical lines) and STV numbers missing between uploaded ones - possibly transfers nobody uploaded. If a finding is fine, mark it as checked with a note. The upload page also warns the store before a possible double upload.</p>
+            </Q>
+            <Q q="How do I close a month?">
+              <p><b>Month-end close</b>, pick the month, look at the checklist and press <b>Close</b>. After that no STV, plan or ERP report dated in that month can be added, voided or changed, and the figures are frozen in the sign-off report (Excel). Open problems can still be explained. Reopen with a reason if needed.</p>
             </Q>
             <Q q="How do I get my Excel tracker?">
               <p><b>Excel reports → Download tracker</b>. It has the same columns as the tracker you used before, filled automatically. Every list also has an <b>Excel</b> button.</p>

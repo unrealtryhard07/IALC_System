@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Badge, Card, FileDrop, Modal, PageHeader, Spinner } from '../components/ui';
 import { useAuth } from '../lib/auth';
@@ -66,7 +67,7 @@ export default function Items() {
               <tbody>
                 {rows.map((i) => (
                   <tr key={i.item_code} className="hover:bg-slate-50">
-                    <td className="td font-mono text-xs">{i.item_code}</td><td className="td font-mono text-xs">{i.barcode}</td><td className="td">{i.name}</td>
+                    <td className="td font-mono text-xs"><Link className="link" to={`/items/${encodeURIComponent(i.item_code)}`}>{i.item_code}</Link></td><td className="td font-mono text-xs">{i.barcode}</td><td className="td">{i.name}</td>
                     <td className="td text-sm">{i.category}</td><td className="td text-sm">{i.brand}</td>
                     <td className="td num">{i.cost == null ? '–' : Number(i.cost).toFixed(3)}</td><td className="td num">{i.shelf_life_days ?? '–'}</td>
                     <td className="td">{i.active ? <Badge tone="good">Active</Badge> : <Badge>Inactive</Badge>}</td>

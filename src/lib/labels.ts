@@ -45,3 +45,17 @@ export const VS_STATUS: Record<string, { label: string; tone: Tone; help: string
 };
 
 export const ROLE_LABEL = { admin: 'Head office (admin)', viewer: 'Head office (view only)', store: 'Store user' } as const;
+
+export const BACKLOG_ACTION: Record<string, { label: string; help: string }> = {
+  to_store: { label: 'Receive into the store', help: 'Post an STV from the Allocation store to the dark store - the stock is there and sellable.' },
+  to_dc: { label: 'Return to the DC', help: 'Post an STV from the Allocation store back to the DC.' },
+  write_off: { label: 'Write off', help: 'The stock does not exist any more (expired, damaged or never arrived). Adjust it out in the ERP.' },
+  investigate: { label: 'Investigate first', help: 'Not clear yet - someone has to check before deciding.' },
+};
+export const BACKLOG_STATUS: Record<string, { label: string; tone: Tone }> = {
+  none: { label: 'Not decided', tone: 'neutral' },
+  pending: { label: 'Waiting for approval', tone: 'warn' },
+  approved: { label: 'Approved - do it in the ERP', tone: 'info' },
+  cleared: { label: 'Cleared', tone: 'good' },
+  rejected: { label: 'Rejected - decide again', tone: 'bad' },
+};

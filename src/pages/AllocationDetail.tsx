@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { DataTable } from '../components/DataTable';
+import { Icon } from '../components/Icon';
 import { nextStep, Progress } from '../components/LegProgress';
 import { DecideModal, ExplainModal, ResolutionBadge, type ResolveTarget } from '../components/Resolution';
 import { Alert, Badge, Card, Field, Modal, PageHeader, Spinner, Stat, Tabs } from '../components/ui';
@@ -95,6 +96,7 @@ export default function AllocationDetail() {
         title={`${alloc.ref} · ${a.siteName(alloc.from_site_id)}${alloc.kind === 'dc' ? ' (DC)' : ''}`}
         subtitle={<>Plan date {fmtDate(alloc.plan_date)} · created {fmtDateTime(alloc.created_at)}{alloc.title && <> · {alloc.title}</>}</>}
         actions={<>
+          {alloc.status === 'active' && <Link className="btn-secondary" to={`/allocations/${alloc.id}/print${legId ? `?leg=${legId}` : ''}`}><Icon name="print" className="h-4 w-4" />Pick list</Link>}
           {alloc.source_file && <button className="btn-secondary" onClick={() => openDocument(alloc.source_file!).catch((e) => alert(friendlyError(e)))}>Original Excel</button>}
           {a.isAdmin && alloc.status === 'active' && <button className="btn-danger" onClick={() => setCancelOpen(true)}>Cancel plan</button>}
         </>}

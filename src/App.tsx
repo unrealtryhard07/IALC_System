@@ -25,6 +25,13 @@ const Settings = lazy(() => import('./pages/Settings'));
 const Audit = lazy(() => import('./pages/Audit'));
 const Account = lazy(() => import('./pages/Account'));
 const Help = lazy(() => import('./pages/Help'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const ReceiveList = lazy(() => import('./pages/Receive'));
+const ReceiveCount = lazy(() => import('./pages/Receive').then((m) => ({ default: m.ReceiveCountPage })));
+const ItemDetail = lazy(() => import('./pages/ItemDetail'));
+const PickList = lazy(() => import('./pages/PickList'));
+const StvChecks = lazy(() => import('./pages/StvChecks'));
+const MonthEnd = lazy(() => import('./pages/MonthEnd'));
 
 function Guard({ when, children }: { when: boolean; children: ReactNode }) {
   return when ? <>{children}</> : <Navigate to="/" replace />;
@@ -64,6 +71,13 @@ export default function App() {
       <Suspense fallback={<Spinner />}>
         <Routes>
           <Route path="/" element={a.isHO ? <Overview /> : <Dashboard />} />
+          <Route path="/dashboard" element={<Guard when={a.isHO}><Analytics /></Guard>} />
+          <Route path="/receive" element={<ReceiveList />} />
+          <Route path="/receive/:id" element={<ReceiveCount />} />
+          <Route path="/items/:code" element={<ItemDetail />} />
+          <Route path="/allocations/:id/print" element={<PickList />} />
+          <Route path="/stv-checks" element={<Guard when={a.isHO}><StvChecks /></Guard>} />
+          <Route path="/month-end" element={<Guard when={a.isHO}><MonthEnd /></Guard>} />
           <Route path="/upload" element={<Guard when={storeOrAdmin}><StvUpload /></Guard>} />
           <Route path="/stvs" element={<Stvs />} />
           <Route path="/stvs/:id" element={<StvDetail />} />

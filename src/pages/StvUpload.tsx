@@ -90,6 +90,8 @@ function JobCard({ job, update, remove }: { job: Job; update: (p: Partial<Job> |
   const a = useAuth();
   const [compare, setCompare] = useState<CompareRow[] | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [similar, setSimilar] = useState<{ id: string; doc_no: string; stv_date: string; same_lines: number; all_lines: number; identical: boolean }[]>([]);
+  const [ackSimilar, setAckSimilar] = useState(false);
   const h = job.header;
   const totalQty = job.lines.reduce((s, l) => s + l.qty, 0);
   const payloadBase = useMemo(() => ({
@@ -114,6 +116,18 @@ function JobCard({ job, update, remove }: { job: Job; update: (p: Partial<Job> |
     return () => { cancel = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [job.stage, payloadBase]);
+
+  // Same route, within 3 days, (almost) the same lines under another STV number -> probably posted twice.
+  useEffect(() => {
+    const pv = job.preview;
+    setSimilar([]); setAckSimilar(false);
+    if (!pv?.from.code || !pv.to.code || pv.duplicate) return;
+    let cancel = false;
+    rpc<typeof similar>('stv_similar', { p: { ...payloadBase, from_code: pv.from.code, to_code: pv.to.code } })
+      .then((r) => !cancel && setSimilar(r)).catch(() => undefined);
+    return () => { cancel = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [job.preview]);
 
   // Line-by-line comparison against the chosen plan / linked dispatches.
   useEffect(() => {
@@ -150,7 +164,8 @@ function JobCard({ job, update, remove }: { job: Job; update: (p: Partial<Job> |
   const pv = job.preview;
   const dir = pv?.direction ?? null;
   const blocking = [...job.errors, ...(pv?.errors ?? [])];
-  const canSave = job.stage === 'ready' && !!pv && pv.can_submit && !pv.duplicate && blocking.length === 0 && !!h.docNo && !!h.date;
+  const canSave = job.stage === 'ready' && !!pv && pv.can_submit && !pv.duplicate && blocking.length === 0 && !!h.docNo && !!h.date
+    && (!similar.some((x) => x.identical) || ackSimilar);
 
   const save = async () => {
     update({ stage: 'saving', message: undefined });
@@ -226,6 +241,15 @@ function JobCard({ job, update, remove }: { job: Job; update: (p: Partial<Job> |
           </div>}
 
           {[...blocking].map((e) => <Alert key={e} tone="bad">{e}</Alert>)}
+          {similar.length > 0 && (
+            <Alert tone={similar.some((x) => x.identical) ? 'bad' : 'warn'} title={similar.some((x) => x.identical) ? 'This looks like a transfer that is already uploaded' : 'Very similar to another STV'}>
+              {similar.map((x) => <div key={x.id}>STV <Link className="link" to={`/stvs/${x.id}`}>{x.doc_no}</Link> ({fmtDate(x.stv_date)}), same route: {x.identical ? 'exactly the same items and quantities' : `${x.same_lines} of ${x.all_lines} lines identical`}.</div>)}
+              <div className="mt-1">If the same stock was posted twice in the ERP, do not upload this one - reverse it in the ERP instead.</div>
+              {similar.some((x) => x.identical) && (
+                <label className="mt-2 flex items-center gap-2 font-medium"><input type="checkbox" checked={ackSimilar} onChange={(e) => setAckSimilar(e.target.checked)} />It is a different, real transfer - upload it anyway</label>
+              )}
+            </Alert>
+          )}
           {pv?.duplicate && <Alert tone="bad" title="Already uploaded">STV {pv.duplicate.doc_no} is already in the system. <Link className="link" to={`/stvs/${pv.duplicate.id}`}>View it</Link></Alert>}
           {pv && !pv.can_submit && !pv.duplicate && blocking.length === 0 && (
             <Alert tone="bad">This STV belongs to {pv.acting_site_id ? a.siteName(pv.acting_site_id) : 'another store'}. Only that store (or head office) can upload it.</Alert>

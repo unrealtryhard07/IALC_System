@@ -12,6 +12,10 @@
   --age-5: #104281;
 }
 body { @apply bg-[#f6f7f9] text-slate-900 antialiased; font-feature-settings: 'cv11', 'ss01'; }
+@media print {
+  @page { size: A4; margin: 12mm; }
+  body { background: white; }
+}
 
 @layer components {
   .btn { @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50; }

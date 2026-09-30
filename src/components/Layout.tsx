@@ -2,7 +2,9 @@ import { useState, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { ROLE_LABEL } from '../lib/labels';
+import { Bell } from './Bell';
 import { Icon, type IconName } from './Icon';
+import { SearchBox } from './SearchBox';
 
 interface NavItem { to: string; label: string; icon: IconName; hint?: string }
 
@@ -16,18 +18,22 @@ export default function Layout({ children }: { children: ReactNode }) {
   const main: NavItem[] = isStore
     ? [
         { to: '/', label: 'My tasks', icon: 'home' },
+        { to: '/receive', label: 'Receive stock', icon: 'inbox', hint: 'Count what arrived' },
         { to: '/allocations', label: 'My allocations', icon: 'list', hint: 'Coming to me & sending out' },
         { to: '/upload', label: 'Upload STV', icon: 'upload', hint: 'Sent or received stock' },
         { to: '/discrepancies', label: 'Problems to explain', icon: 'alert' },
+        { to: '/virtual-stores?tab=cleanup', label: 'Old stock clean-up', icon: 'box' },
         { to: '/stvs', label: 'My STVs', icon: 'file' },
         { to: '/help', label: 'How it works', icon: 'help' },
       ]
     : [
-        { to: '/', label: 'Overview', icon: 'overview' },
+        { to: '/', label: 'Overview', icon: 'home' },
+        { to: '/dashboard', label: 'Dashboard', icon: 'overview', hint: 'Charts & trends' },
         { to: '/allocations', label: 'Allocation tracker', icon: 'list' },
         { to: '/in-transit', label: 'Waiting to be received', icon: 'truck' },
         { to: '/discrepancies', label: 'Problems & approvals', icon: 'alert' },
-        { to: '/virtual-stores', label: 'Stuck stock check', icon: 'search' },
+        { to: '/virtual-stores', label: 'Stuck stock & clean-up', icon: 'box' },
+        { to: '/month-end', label: 'Month-end close', icon: 'calendar' },
         { to: '/reports', label: 'Excel reports', icon: 'chart' },
       ];
   const extra: NavItem[] = isStore
@@ -35,6 +41,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     : [
         ...(a.isAdmin ? [{ to: '/upload', label: 'Upload STV', icon: 'upload' as IconName }] : []),
         { to: '/stvs', label: 'All STVs', icon: 'file' },
+        { to: '/stv-checks', label: 'STV checks', icon: 'search', hint: 'Duplicates & missing numbers' },
         { to: '/items', label: 'Items list', icon: 'box' },
         ...(a.isAdmin ? [{ to: '/users', label: 'Users', icon: 'users' as IconName }, { to: '/settings', label: 'Settings', icon: 'settings' as IconName }] : []),
         { to: '/audit', label: 'Activity log', icon: 'clock' },
@@ -72,7 +79,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen lg:flex">
-      <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
+      <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white print:hidden lg:flex lg:flex-col">
         <div className="px-5 pb-4 pt-5">
           <img src="/circle-logo.png" alt="Circle" className="h-7 w-auto" />
           <div className="mt-1.5 text-xs font-medium uppercase tracking-wider text-slate-400">Allocation Control</div>
@@ -81,10 +88,12 @@ export default function Layout({ children }: { children: ReactNode }) {
         <div className="border-t border-slate-100 px-5 py-3 text-[11px] text-slate-400">Circle United General Trading Co</div>
       </aside>
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200 bg-white/90 px-4 py-2.5 backdrop-blur lg:px-6">
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200 bg-white/90 px-4 py-2.5 backdrop-blur print:hidden lg:px-6">
           <button className="btn-ghost lg:hidden" onClick={() => setOpen(!open)} aria-label="Menu"><Icon name="menu" /></button>
-          <img src="/circle-logo.png" alt="Circle" className="h-5 w-auto lg:hidden" />
-          <div className="ml-auto flex items-center gap-3">
+          <img src="/circle-logo.png" alt="Circle" className="hidden h-5 w-auto sm:block lg:hidden" />
+          <div className="min-w-0 flex-1"><SearchBox /></div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Bell />
             <div className="hidden text-right leading-tight sm:block">
               <div className="text-sm font-medium text-slate-800">{a.profile?.full_name}</div>
               <div className="text-xs text-slate-500">{a.profile && ROLE_LABEL[a.profile.role]} · {stores}</div>
@@ -93,8 +102,8 @@ export default function Layout({ children }: { children: ReactNode }) {
             <button className="btn-ghost btn-sm" onClick={a.signOut} title="Sign out"><Icon name="logout" className="h-4 w-4" /><span className="hidden sm:inline">Sign out</span></button>
           </div>
         </header>
-        {open && <div className="border-b border-slate-200 bg-white lg:hidden">{nav}</div>}
-        <main className="mx-auto max-w-[1440px] p-4 lg:p-7">{children}</main>
+        {open && <div className="border-b border-slate-200 bg-white print:hidden lg:hidden">{nav}</div>}
+        <main className="mx-auto max-w-[1440px] p-4 print:max-w-none print:p-0 lg:p-7">{children}</main>
       </div>
     </div>
   );

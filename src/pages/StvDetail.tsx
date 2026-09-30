@@ -28,6 +28,7 @@ export default function StvDetail() {
   const [explain, setExplain] = useState<{ targets: ResolveTarget[]; mode: 'explain' | 'close' } | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [linkOpen, setLinkOpen] = useState(false);
+  const [count, setCount] = useState<{ counted_at: string; note: string | null; lines: Record<string, number> } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -39,6 +40,9 @@ export default function StvDetail() {
       setLines(await fetchAll<Line>((f, t) => supabase.from('stv_lines').select('line_no, item_code, barcode, item_name, unit, qty').eq('stv_id', s.id).order('line_no').range(f, t)));
       if (s.direction === 'dispatch' || s.direction === 'direct') {
         setDisp(await fetchAll<DispatchItemRow>((f, t) => supabase.from('v_dispatch_items').select('*').eq('stv_id', s.id).order('item_code').range(f, t)));
+        const { data: c } = await supabase.from('receive_counts').select('counted_at, note, receive_count_lines(item_code, counted_qty)').eq('dispatch_id', s.id).maybeSingle();
+        const cc = c as { counted_at: string; note: string | null; receive_count_lines: { item_code: string; counted_qty: number }[] } | null;
+        setCount(cc ? { counted_at: cc.counted_at, note: cc.note, lines: Object.fromEntries(cc.receive_count_lines.map((l) => [l.item_code, Number(l.counted_qty)])) } : null);
       }
       if (s.direction === 'receipt') {
         const m = await fetchAll<MatchRow>((f, t) => supabase.from('receipt_matches').select('*').eq('receipt_id', s.id).range(f, t));
@@ -72,6 +76,7 @@ export default function StvDetail() {
         title={<span className="flex items-center gap-2">STV {stv.doc_no} <Badge tone={d.tone}>{d.label}</Badge>{stv.status === 'void' && <Badge tone="bad">VOID</Badge>}</span>}
         subtitle={<>{fmtDate(stv.stv_date)} · {a.locationLabel(stv.from_code)} → {a.locationLabel(stv.to_code)} · {d.help}</>}
         actions={<>
+          {stv.direction === 'dispatch' && stv.status === 'active' && canReceiver && openQty > 0 && <Link className="btn-primary" to={`/receive/${stv.id}`}>{count ? 'Open count' : 'Count what arrived'}</Link>}
           {stv.file_path && <button className="btn-secondary" onClick={() => openDocument(stv.file_path!).catch((e) => alert(friendlyError(e)))}>Original file</button>}
           {a.isAdmin && stv.status === 'active' && (stv.direction === 'dispatch' || stv.direction === 'direct') && <button className="btn-secondary" onClick={() => setLinkOpen(true)}>{stv.leg_id ? 'Change plan' : 'Link to plan'}</button>}
           {a.isAdmin && stv.status === 'active' && <button className="btn-danger" onClick={() => setVoidOpen(true)}>Void</button>}
@@ -93,6 +98,12 @@ export default function StvDetail() {
       </div>
       <div className="text-xs text-slate-500">Uploaded {fmtDateTime(stv.uploaded_at)} · source {stv.source}{stv.file_name && <> · {stv.file_name}</>}</div>
 
+      {count && (() => {
+        const diffs = disp.filter((r) => (count.lines[r.item_code] ?? 0) !== Number(r.dispatched_qty));
+        return <Alert tone={diffs.length ? 'warn' : 'good'} title={`Counted by ${a.siteName(stv.to_site_id)} on ${fmtDateTime(count.counted_at)}`}>
+          {diffs.length ? `${diffs.length} line(s) differ from what was sent - see the "Counted" column.` : 'Everything arrived as sent.'}{count.note && <> Note: {count.note}</>}
+        </Alert>;
+      })()}
       {(stv.direction === 'dispatch' || stv.direction === 'direct') && (
         <Card title="Has each item been received?" pad={false}>
           <DataTable<DispatchItemRow>
@@ -111,6 +122,8 @@ export default function StvDetail() {
               { key: 'code', header: 'Item', value: (r) => r.item_code, className: 'font-mono text-xs' },
               { key: 'name', header: 'Name', value: (r) => r.item_name, className: 'min-w-[220px]' },
               { key: 'sent', header: 'Sent', align: 'right', value: (r) => r.dispatched_qty, render: (r) => fmtQty(r.dispatched_qty) },
+              ...(count ? [{ key: 'count', header: 'Counted', align: 'right' as const, value: (r: DispatchItemRow) => count.lines[r.item_code] ?? 0,
+                render: (r: DispatchItemRow) => { const c = count.lines[r.item_code] ?? 0; return <b className={c < r.dispatched_qty ? 'text-amber-700' : c > r.dispatched_qty ? 'text-violet-700' : 'text-green-700'}>{fmtQty(c)}</b>; } }] : []),
               { key: 'recv', header: 'Received', align: 'right', value: (r) => r.received_qty, render: (r) => fmtQty(r.received_qty) },
               { key: 'open', header: 'Waiting', align: 'right', value: (r) => r.open_qty, render: (r) => (r.open_qty ? <b className="text-amber-700">{fmtQty(r.open_qty)}</b> : '–') },
               { key: 'rdocs', header: 'Received on STV', value: (r) => r.receipt_docs, render: (r) => <span className="font-mono text-xs">{r.receipt_docs ?? '–'}</span> },

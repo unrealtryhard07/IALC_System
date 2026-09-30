@@ -132,7 +132,60 @@ export function Columns({ categories, series, format = compact, height = 220, em
 }
 
 // ---------------------------------------------------------------------------
-export interface HRow { label: string; value: number; color?: string; note?: string }
+// Line chart for trends over time. null values leave a gap (e.g. a store with no data that month).
+export interface LSeries { name: string; color: string; values: (number | null)[] }
+export function Lines({ categories, series, format = compact, height = 220, min, max, target, targetLabel, empty = 'No data yet' }: {
+  categories: string[]; series: LSeries[]; format?: (n: number) => string; height?: number; min?: number; max?: number;
+  target?: number; targetLabel?: string; empty?: string;
+}) {
+  const t = useTip();
+  const [hover, setHover] = useState<number | null>(null);
+  const all = series.flatMap((s) => s.values.filter((v): v is number => v != null));
+  if (!all.length || !categories.length) return <div className="flex h-40 items-center justify-center text-sm text-slate-400">{empty}</div>;
+  const lo = min ?? Math.min(0, ...all);
+  const hi = max ?? (() => { const m = Math.max(...all, target ?? 0); const p = 10 ** Math.floor(Math.log10(m || 1)); const k = m / p; return (k <= 1 ? 1 : k <= 2 ? 2 : k <= 5 ? 5 : 10) * p; })();
+  const W = 640, H = height, padL = 44, padR = 28, padB = 26, padT = 14;
+  const plotW = W - padL - padR, plotH = H - padB - padT;
+  const x = (i: number) => padL + (categories.length === 1 ? plotW / 2 : (i / (categories.length - 1)) * plotW);
+  const y = (v: number) => padT + plotH - ((v - lo) / (hi - lo || 1)) * plotH;
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => lo + f * (hi - lo));
+  const path = (vals: (number | null)[]) => vals.reduce((d, v, i) => (v == null ? d : d + `${d && vals[i - 1] != null ? ' L' : ' M'} ${x(i)} ${y(v)}`), '');
+  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * W;
+    const i = Math.max(0, Math.min(categories.length - 1, Math.round(((px - padL) / plotW) * (categories.length - 1))));
+    setHover(i);
+    t.show(e, <><b>{categories[i]}</b>{series.map((s) => <div key={s.name} className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: s.color }} />{s.name}: <b>{s.values[i] == null ? '–' : format(s.values[i]!)}</b></div>)}</>);
+  };
+  return (
+    <div ref={t.ref} className="relative" onMouseLeave={() => { t.hide(); setHover(null); }}>
+      <div className="mb-2"><Legend items={series.map((s) => ({ label: s.name, color: s.color }))} /></div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" onMouseMove={onMove} role="img"
+        aria-label={series.map((s) => `${s.name}: ${s.values.map((v, i) => `${categories[i]} ${v == null ? 'none' : format(v)}`).join(', ')}`).join('; ')}>
+        {ticks.map((tk) => (
+          <g key={tk}>
+            <line x1={padL} x2={W - padR} y1={y(tk)} y2={y(tk)} stroke="#e8e8e4" strokeWidth={1} />
+            <text x={padL - 6} y={y(tk) + 3} textAnchor="end" className="fill-slate-400 text-[10px]">{format(tk)}</text>
+          </g>
+        ))}
+        {target != null && <g><line x1={padL} x2={W - padR} y1={y(target)} y2={y(target)} stroke="#334155" strokeDasharray="4 4" strokeWidth={1} />
+          {targetLabel && <text x={padL + 4} y={y(target) - 4} className="fill-slate-500 text-[10px]">{targetLabel}</text>}</g>}
+        {hover != null && <line x1={x(hover)} x2={x(hover)} y1={padT} y2={padT + plotH} stroke="#cbd5e1" strokeWidth={1} />}
+        {series.map((s) => (
+          <g key={s.name}>
+            <path d={path(s.values)} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+            {s.values.map((v, i) => v != null && <circle key={i} cx={x(i)} cy={y(v)} r={hover === i ? 4.5 : 3} fill="white" stroke={s.color} strokeWidth={2} />)}
+          </g>
+        ))}
+        {categories.map((c, i) => <text key={c} x={x(i)} y={H - 8} textAnchor="middle" className="fill-slate-500 text-[10.5px]">{c}</text>)}
+      </svg>
+      {t.el}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+export interface HRow{ label: string; value: number; color?: string; note?: string }
 export function HBars({ rows, format = compact, max, target, targetLabel, empty = 'No data yet' }: { rows: HRow[]; format?: (n: number) => string; max?: number; target?: number; targetLabel?: string; empty?: string }) {
   const t = useTip();
   const m = max ?? Math.max(0, ...rows.map((r) => r.value));

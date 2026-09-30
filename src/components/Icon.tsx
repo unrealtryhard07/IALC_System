@@ -29,6 +29,16 @@ const PATHS: Record<string, string> = {
   chevronRight: 'M9 6l6 6-6 6',
   chevronDown: 'M6 9l6 6 6-6',
   arrowRight: 'M5 12h14M13 6l6 6-6 6',
+  arrowLeft: 'M19 12H5M11 6l-6 6 6 6',
+  bell: 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0',
+  print: 'M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z',
+  scan: 'M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10.5 8v8M14 8v8M17 8v8',
+  lock: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4',
+  unlock: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 7.8-1.2',
+  calendar: 'M4 5h16v16H4zM4 10h16M8 3v4M16 3v4',
+  plus: 'M12 5v14M5 12h14',
+  minus: 'M5 12h14',
+  trend: 'M3 17l6-6 4 4 8-8M15 7h6v6',
 };
 export type IconName = keyof typeof PATHS;
 

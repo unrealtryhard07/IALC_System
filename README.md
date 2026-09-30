@@ -28,6 +28,12 @@ responsibility.
 | **Discrepancies** | Short / not sent / over / wrong item / unplanned STV / not received / received without dispatch. The responsible store gives a reason, HO approves or rejects (bulk). |
 | **In transit** | Everything sitting in Allocation stores with age, SLA status and KWD value. |
 | **Virtual store watch** | Upload the ERP stock report of the Allocation stores; each item is classified (not in system / receipt not uploaded / explained) and aged – covers the historical backlog. |
+| **Old stock clean-up** | Per item in an Allocation store: receive into store / return to DC / write off / investigate. Store proposes, HO approves, the next ERP report marks it cleared; progress and trend per virtual store. |
+| **Receiving count** | Mobile screen for the receiving store: tick, type or scan each line, save the count (HO sees differences at once) and download the exact list to key into the ERP receiving STV. |
+| **Pick list** | Printable A4 pick list per destination with barcodes, tick boxes and signatures. |
+| **STV checks** | Warns before uploading an STV identical to another on the same route (±3 days); HO page for duplicate pairs and missing STV numbers (global or per-store series). |
+| **Month-end close** | HO closes a month: STVs, plans and ERP reports dated in it can no longer be added, voided or changed (enforced by database triggers); a frozen sign-off report is kept. |
+| **Search, bell, dashboard** | Search STVs / plans / items from anywhere; notification bell with the user's open tasks; Dashboard tab with charts and the monthly accuracy trend per store. |
 | **Items masterlist** | Upload Excel/CSV any time (auto column detection; cost enables KWD values). |
 | **Reports** | Excel exports everywhere, incl. the existing tracker layout (received dates, SKUs sent/received, days, SLA per store) generated automatically. |
 | **Access** | HO admin (full), HO viewer (read-only), store users (only their stores – enforced in the database with row-level security). Audit log of every action. |
