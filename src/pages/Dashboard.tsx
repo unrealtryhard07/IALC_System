@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Alert, Badge, Card, PageHeader, Spinner, Stat } from '../components/ui';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+import { Alert, Badge, Card, Spinner } from '../components/ui';
 import { useAuth } from '../lib/auth';
 import { AGE_BUCKETS, ageBucket, addDays, daysBetween, fmtDate, fmtKwd, fmtPct, fmtQty, kwToday, sum } from '../lib/format';
 import { fetchAll, friendlyError, supabase } from '../lib/supabase';
@@ -8,9 +8,13 @@ import type { DiscrepancyRow, DispatchItemRow, LegRow, VsRow } from '../lib/type
 
 interface Data { legs: LegRow[]; open: DispatchItemRow[]; disc: DiscrepancyRow[]; vs: VsRow[] }
 
+const greeting = () => {
+  const h = Number(new Date().toLocaleString('en-GB', { timeZone: 'Asia/Kuwait', hour: '2-digit', hour12: false }));
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+};
+
 export default function Dashboard() {
   const a = useAuth();
-  const nav = useNavigate();
   const [d, setD] = useState<Data | null>(null);
   const [err, setErr] = useState('');
 
@@ -26,73 +30,163 @@ export default function Dashboard() {
 
   const k = useMemo(() => {
     if (!d) return null;
-    const overdue = d.open.filter((r) => r.age_days > a.receiptSla);
-    const awaiting = d.legs.filter((l) => l.status === 'awaiting_dispatch');
     const mine = (siteId: number | null) => a.isHO || (siteId != null && a.mySiteIds.includes(siteId));
-    const needReason = d.disc.filter((x) => (x.resolution_status === null || x.resolution_status === 'rejected') && mine(x.responsible_site_id));
-    const pending = d.disc.filter((x) => x.resolution_status === 'pending');
-    const valueKnown = d.open.some((r) => r.cost != null);
+    const stvCount = (rows: DispatchItemRow[]) => new Set(rows.map((r) => r.stv_id)).size;
+    const toReceive = d.open.filter((r) => mine(r.to_site_id));
+    const late = d.open.filter((r) => r.age_days > a.receiptSla);
+    // Not-received-at-all lines are the receiving task (card above), not a separate problem
+    const isProblem = (x: DiscrepancyRow) => x.kind !== 'receipt_short' || Number(x.actual_qty) > 0;
+    const toSend = d.legs.filter((l) => l.status === 'awaiting_dispatch' && (a.isHO || a.mySiteIds.includes(l.from_site_id)));
     return {
-      openQty: sum(d.open, (r) => r.open_qty),
-      openValue: sum(d.open, (r) => r.open_qty * (r.cost ?? 0)),
-      valueKnown,
-      openStvs: new Set(d.open.map((r) => r.stv_id)).size,
-      openLines: d.open.length,
-      overdueQty: sum(overdue, (r) => r.open_qty),
-      overdueStvs: new Set(overdue.map((r) => r.stv_id)).size,
-      oldest: Math.max(0, ...d.open.map((r) => r.age_days)),
-      awaiting: awaiting.length,
-      awaitingLate: awaiting.filter((l) => (l.days_waiting_dispatch ?? 0) > a.dispatchSla).length,
-      needReason: needReason.length,
-      pending: pending.length,
-      vsQty: sum(d.vs, (r) => r.erp_qty),
-      vsValue: sum(d.vs, (r) => r.erp_value ?? 0),
-      vsUnexplained: d.vs.filter((r) => r.match_status === 'not_in_system').length,
-      vsLocations: new Set(d.vs.map((r) => r.location_code)).size,
+      toSend: toSend.length,
+      toSendLate: toSend.filter((l) => (l.days_waiting_dispatch ?? 0) > a.dispatchSla).length,
+      toReceive: stvCount(toReceive),
+      toReceiveQty: sum(toReceive, (r) => r.open_qty),
+      oldest: Math.max(0, ...toReceive.map((r) => r.age_days)),
+      late: stvCount(late),
+      lateQty: sum(late, (r) => r.open_qty),
+      lateValue: sum(late, (r) => r.open_qty * (r.cost ?? 0)),
+      explain: d.disc.filter((x) => isProblem(x) && (x.resolution_status === null || x.resolution_status === 'rejected') && mine(x.responsible_site_id)).length,
+      rejected: d.disc.filter((x) => isProblem(x) && x.resolution_status === 'rejected' && mine(x.responsible_site_id)).length,
+      approve: d.disc.filter((x) => x.resolution_status === 'pending').length,
+      stuckSkus: d.vs.filter((r) => r.match_status === 'not_in_system').length,
+      stuckQty: sum(d.vs.filter((r) => r.match_status === 'not_in_system'), (r) => r.erp_qty),
+      hasSnapshot: d.vs.length > 0,
     };
   }, [d, a]);
 
   if (err) return <Alert tone="bad">{err}</Alert>;
   if (!d || !k) return <Spinner />;
-  const storeUser = !a.isHO;
+  const isStore = a.profile?.role === 'store';
+  const storeNames = a.mySiteIds.map(a.siteName).join(' & ');
+
+  const tasks: TaskProps[] = isStore
+    ? [
+        { icon: '📦', count: k.toSend, title: k.toSend === 1 ? 'plan to send' : 'plans to send', text: k.toSendLate ? `${k.toSendLate} are late. Pick the items, make the STV in the ERP, then upload it here.` : 'Pick the items, make the STV in the ERP, then upload it here.', to: '#to-send', button: 'See what to send', tone: k.toSendLate ? 'bad' : 'info' },
+        { icon: '🚚', count: k.toReceive, title: k.toReceive === 1 ? 'transfer to receive' : 'transfers to receive', text: k.toReceive ? `${fmtQty(k.toReceiveQty)} pcs are waiting for you (oldest ${k.oldest} days). Receive them in the ERP (Allocation → D.S) and upload that STV - until then the app cannot sell them.` : 'Nothing is waiting for you.', to: '/upload', button: 'Upload receiving STV', tone: k.oldest > a.receiptSla ? 'bad' : 'info' },
+        { icon: '⚠️', count: k.explain, title: k.explain === 1 ? 'problem to explain' : 'problems to explain', text: k.rejected ? `${k.rejected} reason(s) were rejected by head office - please explain again.` : 'Items sent short, not sent, or received short. Choose a reason for each.', to: '/discrepancies', button: 'Explain now', tone: k.explain ? 'warn' : 'info' },
+      ]
+    : [
+        { icon: '✅', count: k.approve, title: k.approve === 1 ? 'explanation to approve' : 'explanations to approve', text: 'Stores gave reasons for short or missing stock. Approve or reject them.', to: '/discrepancies?tab=pending', button: 'Review', tone: k.approve ? 'purple' : 'info' },
+        { icon: '🚚', count: k.late, title: 'late receiving', text: k.late ? `${fmtQty(k.lateQty)} pcs sent more than ${a.receiptSla} day(s) ago are still not received${k.lateValue ? ` (${fmtKwd(k.lateValue)})` : ''}. Chase the stores.` : 'Every store received its stock on time.', to: '/in-transit?overdue=1', button: 'See who is late', tone: k.late ? 'bad' : 'info' },
+        { icon: '📦', count: k.toSend, title: 'plans not sent yet', text: k.toSendLate ? `${k.toSendLate} are later than ${a.dispatchSla} days.` : 'Plans the sending stores still have to send.', to: '/allocations?status=awaiting_dispatch', button: 'See plans', tone: k.toSendLate ? 'warn' : 'info' },
+        { icon: '⚠️', count: k.explain, title: 'problems without a reason', text: 'Differences the stores have not explained yet.', to: '/discrepancies', button: 'See problems', tone: k.explain ? 'warn' : 'info' },
+        { icon: '🔍', count: k.hasSnapshot ? k.stuckSkus : null, title: 'unknown stuck items', text: k.hasSnapshot ? `${fmtQty(k.stuckQty)} pcs sit in the virtual stores with no transfer explaining them.` : 'Upload the ERP stock report of the Allocation stores to find old stuck stock.', to: '/virtual-stores', button: k.hasSnapshot ? 'Check stuck stock' : 'Upload ERP report', tone: k.stuckSkus ? 'bad' : 'info' },
+      ];
+  const allClear = tasks.every((t) => !t.count);
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        title={storeUser ? `Dashboard - ${a.mySiteIds.map(a.siteName).join(', ')}` : 'Head office dashboard'}
-        subtitle={`Today ${fmtDate(kwToday())} · receiving SLA ${a.receiptSla} day(s) · dispatch SLA ${a.dispatchSla} day(s)`}
-        actions={!a.isHO || a.isAdmin ? <Link to="/upload" className="btn-primary">⇪ Upload STV</Link> : undefined}
-      />
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
-        <Stat label="Sitting in allocation stores" value={`${fmtQty(k.openQty)} pcs`} tone="info"
-          sub={`${k.openStvs} STVs · ${k.openLines} lines${k.valueKnown ? ` · ${fmtKwd(k.openValue)}` : ''}`} onClick={() => nav('/in-transit')} />
-        <Stat label={`Overdue > ${a.receiptSla}d (not received)`} value={`${fmtQty(k.overdueQty)} pcs`} tone={k.overdueQty ? 'bad' : 'good'}
-          sub={`${k.overdueStvs} STVs · oldest ${k.oldest} days`} onClick={() => nav('/in-transit?overdue=1')} />
-        <Stat label="Plans awaiting dispatch" value={k.awaiting} tone={k.awaitingLate ? 'warn' : 'neutral'}
-          sub={`${k.awaitingLate} late (> ${a.dispatchSla} days)`} onClick={() => nav('/allocations?status=awaiting_dispatch')} />
-        <Stat label={storeUser ? 'Lines needing my reason' : 'Lines needing a reason'} value={k.needReason} tone={k.needReason ? 'warn' : 'good'}
-          sub="short / wrong / not received" onClick={() => nav('/discrepancies')} />
-        <Stat label="Awaiting HO approval" value={k.pending} tone={k.pending ? 'purple' : 'neutral'} sub="explanations sent by stores" onClick={() => nav('/discrepancies?tab=pending')} />
-        <Stat label="Virtual stores (ERP report)" value={k.vsLocations ? `${fmtQty(k.vsQty)} pcs` : '–'} tone={k.vsUnexplained ? 'bad' : 'neutral'}
-          sub={k.vsLocations ? `${k.vsUnexplained} SKUs not explained${k.vsValue ? ` · ${fmtKwd(k.vsValue)}` : ''}` : 'no ERP snapshot uploaded yet'} onClick={() => nav('/virtual-stores')} />
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">{greeting()}, {a.profile?.full_name?.split(' ')[0]}</h1>
+          <p className="text-slate-500">{isStore ? `Here is what ${storeNames} needs to do today.` : 'Here is what needs your attention today.'} <span className="text-slate-400">· {fmtDate(kwToday())}</span></p>
+        </div>
+        {isStore && <Link to="/upload" className="btn-primary px-5 py-2.5 text-base">⬆️ Upload STV</Link>}
+        {a.isAdmin && <Link to="/allocations/new" className="btn-primary px-5 py-2.5 text-base">📋 Upload a transfer plan</Link>}
       </div>
 
-      {storeUser && <StoreTasks d={d} />}
+      {a.isAdmin && <SetupChecklist />}
 
-      <div className="grid gap-5 xl:grid-cols-5">
-        <Card title="How long stock has been waiting in Allocation stores (by receiving store)" className="xl:col-span-3">
-          <AgingChart rows={d.open} />
-        </Card>
-        <Card title="Oldest open transfers" className="xl:col-span-2" pad={false}>
-          <OldestTransfers rows={d.open} />
-        </Card>
+      {allClear && <Alert tone="good" title="All done - nothing needs attention right now 🎉" />}
+      <div className={`grid gap-4 sm:grid-cols-2 ${isStore ? 'lg:grid-cols-3' : 'lg:grid-cols-3 xl:grid-cols-5'}`}>
+        {tasks.map((t) => <TaskCard key={t.title} {...t} />)}
       </div>
 
-      <Card title="Store scorecard - allocations planned in the last 30 days" pad={false}>
-        <Scorecard legs={d.legs} open={d.open} />
-      </Card>
+      <HowItWorks compact />
+
+      {isStore ? <StoreTasks d={d} /> : (
+        <>
+          <div className="grid gap-5 xl:grid-cols-5">
+            <Card title="Stock waiting to be received - by store and age" className="xl:col-span-3"><AgingChart rows={d.open} /></Card>
+            <Card title="Oldest transfers not received" className="xl:col-span-2" pad={false}><OldestTransfers rows={d.open} /></Card>
+          </div>
+          <Card title="How each store is doing (plans from the last 30 days)" pad={false}><Scorecard legs={d.legs} open={d.open} /></Card>
+        </>
+      )}
     </div>
+  );
+}
+
+interface TaskProps { icon: string; count: number | null; title: string; text: string; to: string; button: string; tone: 'info' | 'bad' | 'warn' | 'purple' }
+function TaskCard({ icon, count, title, text, to, button, tone }: TaskProps) {
+  const done = count === 0;
+  const ring = done ? 'border-green-200 bg-green-50/40' : { info: 'border-blue-200', bad: 'border-red-300 bg-red-50/40', warn: 'border-amber-300 bg-amber-50/40', purple: 'border-violet-300 bg-violet-50/40' }[tone];
+  const go = to.startsWith('#')
+    ? <a href={to} className={done ? 'btn-secondary w-full' : 'btn-primary w-full'}>{button}</a>
+    : <Link to={to} className={done ? 'btn-secondary w-full' : 'btn-primary w-full'}>{button}</Link>;
+  return (
+    <div className={`card flex flex-col border-2 p-4 ${ring}`}>
+      <div className="flex items-center gap-3">
+        <span className="text-3xl" aria-hidden>{done ? '✅' : icon}</span>
+        <div>
+          <div className="text-3xl font-bold tabular-nums leading-none">{count ?? '–'}</div>
+          <div className="text-sm font-semibold text-slate-700">{title}</div>
+        </div>
+      </div>
+      <p className="my-3 flex-1 text-sm text-slate-600">{done ? 'Nothing to do here.' : text}</p>
+      {go}
+    </div>
+  );
+}
+
+export function HowItWorks({ compact }: { compact?: boolean }) {
+  const steps: { n: number; title: string; who: string; body: ReactNode }[] = [
+    { n: 1, title: 'Head office plans', who: 'Head office', body: 'Uploads the transfer plan Excel (which store sends what to whom).' },
+    { n: 2, title: 'Sender sends', who: 'Sending store', body: <>Makes the STV in the ERP <b>(my store → their Allocation)</b> and uploads it here the same day.</> },
+    { n: 3, title: 'Receiver receives', who: 'Receiving store', body: <>When goods arrive, makes the STV <b>(my Allocation → my D.S)</b> and uploads it. Only now can the app sell it.</> },
+    { n: 4, title: 'Differences explained', who: 'Stores + head office', body: 'Anything short or missing: the store gives a reason, head office approves.' },
+  ];
+  return (
+    <Card title={compact ? 'How it works (4 steps)' : undefined}>
+      <ol className="grid gap-3 md:grid-cols-4">
+        {steps.map((s) => (
+          <li key={s.n} className="flex gap-3">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 font-bold text-white">{s.n}</span>
+            <div>
+              <div className="font-semibold">{s.title} <span className="text-xs font-normal text-slate-500">· {s.who}</span></div>
+              <div className="text-sm text-slate-600">{s.body}</div>
+            </div>
+          </li>
+        ))}
+      </ol>
+      {!compact && <p className="mt-4 rounded-md bg-amber-50 p-3 text-sm text-amber-900"><b>Why step 3 matters:</b> stock sent to a store first lands in that store's <b>Allocation</b> store - a virtual store the app cannot sell from. If the receiving STV is never made, the stock sits there until it expires. This system makes sure that never happens silently.</p>}
+    </Card>
+  );
+}
+
+function SetupChecklist() {
+  const a = useAuth();
+  const [s, setS] = useState<{ users: number; items: number; plans: number; unconfirmed: number } | null>(null);
+  const [hidden, setHidden] = useState(() => { try { return localStorage.getItem('ialc.setupDone') === '1'; } catch { return false; } });
+  useEffect(() => {
+    Promise.all([
+      supabase.from('profiles').select('user_id', { count: 'exact', head: true }).eq('role', 'store'),
+      supabase.from('items').select('item_code', { count: 'exact', head: true }),
+      supabase.from('allocations').select('id', { count: 'exact', head: true }),
+    ]).then(([u, i, p]) => setS({ users: u.count ?? 0, items: i.count ?? 0, plans: p.count ?? 0, unconfirmed: a.locations.filter((l) => l.auto_created).length }));
+  }, [a.locations]);
+  if (!s || hidden) return null;
+  const steps = [
+    { done: s.users > 0, label: 'Create a login for each store', to: '/users', button: 'Add store users' },
+    { done: s.items > 0, label: 'Upload your items masterlist (Excel)', to: '/items', button: 'Upload masterlist' },
+    { done: s.plans > 0, label: 'Upload your first transfer plan (the Excel you send stores)', to: '/allocations/new', button: 'Upload plan' },
+    { done: s.unconfirmed === 0, label: 'Confirm new ERP store numbers (found on uploaded STVs)', to: '/settings', button: 'Check store numbers' },
+  ];
+  const left = steps.filter((x) => !x.done).length;
+  if (left === 0) return null;
+  return (
+    <Card title={`Getting started - ${steps.length - left} of ${steps.length} done`} actions={<button className="btn-ghost btn-sm" onClick={() => { setHidden(true); try { localStorage.setItem('ialc.setupDone', '1'); } catch { /* ignore */ } }}>Hide</button>}>
+      <ul className="space-y-2">
+        {steps.map((x) => (
+          <li key={x.label} className="flex flex-wrap items-center gap-3">
+            <span className={`flex h-6 w-6 items-center justify-center rounded-full text-sm ${x.done ? 'bg-green-600 text-white' : 'border-2 border-slate-300'}`}>{x.done ? '✓' : ''}</span>
+            <span className={x.done ? 'text-slate-400 line-through' : 'font-medium'}>{x.label}</span>
+            {!x.done && <Link to={x.to} className="btn-secondary btn-sm ml-auto">{x.button} →</Link>}
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }
 
@@ -143,7 +237,7 @@ function AgingChart({ rows }: { rows: DispatchItemRow[] }) {
           </div>
         ))}
       </div>
-      <p className="mt-3 text-xs text-slate-500">Pieces dispatched but not yet moved into the receiving D.S. Older = darker. Everything past the SLA should be chased.</p>
+      <p className="mt-3 text-xs text-slate-500">Pieces sent but not yet received by the store. Darker = older. Anything older than the receiving deadline should be chased.</p>
       {hover && (
         <div className="pointer-events-none absolute z-10 whitespace-pre rounded-md bg-slate-900 px-2 py-1 text-xs text-white shadow"
           style={{ left: hover.x + 12, top: hover.y + 12 }}>{hover.text}</div>
@@ -214,12 +308,12 @@ function Scorecard({ legs, open }: { legs: LegRow[]; open: DispatchItemRow[] }) 
           <tr>
             <th className="th whitespace-normal">Store</th>
             <th className="th whitespace-normal text-right" title="Allocation legs this store had to send">Plans to send</th>
-            <th className="th whitespace-normal text-right">Not dispatched</th>
-            <th className="th whitespace-normal text-right" title="Dispatched qty / planned qty (capped at plan)">Qty fill %</th>
-            <th className="th whitespace-normal text-right" title="SKUs dispatched / SKUs planned">SKU fill %</th>
-            <th className="th whitespace-normal text-right">Open send issues</th>
+            <th className="th whitespace-normal text-right">Not sent yet</th>
+            <th className="th whitespace-normal text-right" title="Dispatched qty / planned qty (capped at plan)">Sent vs plan (pcs)</th>
+            <th className="th whitespace-normal text-right" title="SKUs dispatched / SKUs planned">Sent vs plan (items)</th>
+            <th className="th whitespace-normal text-right">Problems</th>
             <th className="th whitespace-normal text-right">Transfers received</th>
-            <th className="th whitespace-normal text-right" title="Received qty / dispatched qty">Received %</th>
+            <th className="th whitespace-normal text-right" title="Received qty / dispatched qty">Received vs sent</th>
             <th className="th whitespace-normal text-right" title="From dispatch to fully received">Avg days to receive</th>
             <th className="th whitespace-normal text-right">Waiting now (pcs)</th>
             <th className="th whitespace-normal text-right">Oldest (days)</th>
@@ -260,23 +354,23 @@ function StoreTasks({ d }: { d: Data }) {
     return [...m.values()].sort((x, y) => y.age - x.age);
   }, [d.open, a.mySiteIds]);
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
-      <Card title={`To dispatch (${toSend.length})`} pad={false}>
-        {toSend.length === 0 ? <div className="p-4 text-sm text-green-700">✔ Nothing waiting to be sent.</div> : (
+    <div id="to-send" className="grid scroll-mt-20 gap-5 lg:grid-cols-2">
+      <Card title={`📦 Stock you must send (${toSend.length})`} pad={false}>
+        {toSend.length === 0 ? <div className="p-4 text-sm text-green-700">✔ Nothing to send.</div> : (
           <table className="w-full"><tbody>
             {toSend.map((l) => (
               <tr key={l.leg_id} className="hover:bg-slate-50">
                 <td className="td"><Link className="link" to={`/allocations/${l.allocation_id}?leg=${l.leg_id}`}>{l.ref}</Link> → <b>{a.siteName(l.to_site_id)}</b></td>
                 <td className="td text-sm text-slate-500">{fmtDate(l.plan_date)}</td>
-                <td className="td num text-sm">{l.planned_skus} SKUs · {fmtQty(l.planned_qty)} pcs</td>
+                <td className="td num text-sm">{l.planned_skus} items · {fmtQty(l.planned_qty)} pcs</td>
                 <td className="td num">{(l.days_waiting_dispatch ?? 0) > a.dispatchSla ? <Badge tone="bad">{l.days_waiting_dispatch} d late</Badge> : <Badge>{l.days_waiting_dispatch} d</Badge>}</td>
               </tr>
             ))}
           </tbody></table>
         )}
       </Card>
-      <Card title={`To receive - post Allocation → D.S and upload (${incoming.length})`} pad={false}>
-        {incoming.length === 0 ? <div className="p-4 text-sm text-green-700">✔ Nothing waiting in your Allocation store.</div> : (
+      <Card title={`🚚 Stock waiting for you to receive (${incoming.length})`} pad={false}>
+        {incoming.length === 0 ? <div className="p-4 text-sm text-green-700">✔ Nothing waiting for you.</div> : (
           <table className="w-full"><tbody>
             {incoming.map((s) => (
               <tr key={s.id} className="hover:bg-slate-50">

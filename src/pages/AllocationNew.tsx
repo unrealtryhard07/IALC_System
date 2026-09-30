@@ -80,8 +80,8 @@ export default function AllocationNew() {
 
   return (
     <div className="max-w-5xl">
-      <PageHeader title="Upload allocation plan" subtitle="Use the same Excel you send to stores today - internal (From Store / Variant / Barcode / Item Name / store columns) or DC (Item Code / … / DC QTY / store columns)." />
-      <FileDrop accept=".xlsx,.csv" onFiles={(f) => f[0] && load(f[0])} label={file ? `Loaded: ${file.name} - drop another to replace` : 'Drop the allocation Excel here'} />
+      <PageHeader title="Upload a transfer plan" subtitle="Drop the same Excel you send to the stores today (store-to-store or DC format). The system reads it and shows what each store will get." />
+      <FileDrop accept=".xlsx,.csv" onFiles={(f) => f[0] && load(f[0])} label={file ? `Loaded: ${file.name} - drop another to replace` : 'Drop the plan Excel here'} />
       {err && <div className="mt-3"><Alert tone="bad">{err}</Alert></div>}
       {sheets.length > 1 && (
         <div className="mt-3 w-64"><Field label="Sheet"><select className="input" value={sheetIdx} onChange={(e) => setSheetIdx(Number(e.target.value))}>{sheets.map((s, i) => <option key={s.name} value={i}>{s.name}</option>)}</select></Field></div>
@@ -94,7 +94,7 @@ export default function AllocationNew() {
             <>
               <Card title="Plan details">
                 <div className="grid gap-3 md:grid-cols-4">
-                  <Field label="Sending store / DC" hint={plan.sourceText ? `Found in file: "${plan.sourceText}"` : 'Not found in the file - choose it'}>
+                  <Field label="Who sends?" hint={plan.sourceText ? `Found in file: "${plan.sourceText}"` : 'Not found in the file - choose it'}>
                     <select className="input" value={source} onChange={(e) => setSource(e.target.value ? Number(e.target.value) : '')}>
                       <option value="">Choose…</option>
                       {a.sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -131,7 +131,7 @@ export default function AllocationNew() {
               <div className="flex justify-end gap-2">
                 <button className="btn-secondary" onClick={() => nav('/allocations')}>Cancel</button>
                 <button className="btn-primary" disabled={!source || busy || dests.length === 0} onClick={submit}>
-                  {busy ? 'Creating…' : `Create allocation (${dests.length} store${dests.length === 1 ? '' : 's'})`}
+                  {busy ? 'Creating…' : `Create plan (${dests.length} store${dests.length === 1 ? '' : 's'})`}
                 </button>
               </div>
             </>

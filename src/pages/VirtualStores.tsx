@@ -38,18 +38,18 @@ export default function VirtualStores() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Virtual store watch"
-        subtitle="Upload the ERP stock report of the Allocation (virtual) stores. Every item sitting there is compared with the transfers IALC knows about - old, unexplained stock is what expires."
-        actions={canUpload && <button className="btn-primary" onClick={() => setUpload(true)}>⇪ Upload ERP stock report</button>} />
+      <PageHeader title="Stuck stock check"
+        subtitle="Upload the ERP stock report of each Allocation (virtual) store. The system tells you which stock is stuck there, for how long, and why - so it can be received before it expires."
+        actions={canUpload && <button className="btn-primary" onClick={() => setUpload(true)}>⬆️ Upload ERP stock report</button>} />
       {err && <Alert tone="bad">{err}</Alert>}
       <Tabs value={loc} onChange={setLoc} tabs={[{ value: 'all', label: 'All allocation stores' }, ...allocs.map((l) => ({ value: l.code, label: `${l.erp_name} (${l.code})` }))]} />
       {!rows ? <Spinner /> : (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-            <Stat label="ERP stock in virtual store" value={`${fmtQty(sum(erpRows, (r) => r.erp_qty))} pcs`} sub={`${erpRows.length} SKUs`} tone="info" />
+            <Stat label="Stock in virtual stores" value={`${fmtQty(sum(erpRows, (r) => r.erp_qty))} pcs`} sub={`${erpRows.length} SKUs`} tone="info" />
             <Stat label="Value" value={fmtKwd(sum(erpRows, (r) => r.erp_value ?? 0))} sub="needs cost in masterlist" />
-            <Stat label="Not in system" value={scope.filter((r) => r.match_status === 'not_in_system').length} sub={`${fmtQty(sum(scope.filter((r) => r.match_status === 'not_in_system'), (r) => r.erp_qty))} pcs - backlog / untracked`} tone="bad" onClick={() => setStatus('not_in_system')} />
-            <Stat label="Receipt not uploaded" value={scope.filter((r) => r.match_status === 'receipt_not_uploaded').length} sub="posted in ERP, missing here" tone="purple" onClick={() => setStatus('receipt_not_uploaded')} />
+            <Stat label="Unknown stuck stock" value={scope.filter((r) => r.match_status === 'not_in_system').length} sub={`${fmtQty(sum(scope.filter((r) => r.match_status === 'not_in_system'), (r) => r.erp_qty))} pcs - backlog / untracked`} tone="bad" onClick={() => setStatus('not_in_system')} />
+            <Stat label="Received, not uploaded" value={scope.filter((r) => r.match_status === 'receipt_not_uploaded').length} sub="posted in ERP, missing here" tone="purple" onClick={() => setStatus('receipt_not_uploaded')} />
             <Stat label="Oldest item" value={`${Math.max(0, ...erpRows.map((r) => r.age_days ?? 0))} days`} sub={loc !== 'all' && scope[0]?.snapshot_date ? `snapshot ${fmtDate(scope[0].snapshot_date)}` : undefined} tone="warn" />
           </div>
           <AgeStrip rows={erpRows} />
@@ -69,8 +69,8 @@ export default function VirtualStores() {
                 { key: 'loc', header: 'Store', value: (r) => r.location_code, render: (r) => <span title={r.erp_name} className="font-mono text-xs">{r.location_code}</span> },
                 { key: 'code', header: 'Item', value: (r) => r.item_code, className: 'font-mono text-xs' },
                 { key: 'name', header: 'Name', value: (r) => r.item_name, className: 'min-w-[220px]' },
-                { key: 'erp', header: 'ERP qty', align: 'right', value: (r) => r.erp_qty, render: (r) => fmtQty(r.erp_qty) },
-                { key: 'sys', header: 'Open transfers', align: 'right', value: (r) => r.system_open_qty, render: (r) => fmtQty(r.system_open_qty) },
+                { key: 'erp', header: 'In ERP', align: 'right', value: (r) => r.erp_qty, render: (r) => fmtQty(r.erp_qty) },
+                { key: 'sys', header: 'Expected (on the way)', align: 'right', value: (r) => r.system_open_qty, render: (r) => fmtQty(r.system_open_qty) },
                 { key: 'diff', header: 'Unexplained', align: 'right', value: (r) => r.diff_qty, render: (r) => <b className={r.diff_qty > 0 ? 'text-red-700' : r.diff_qty < 0 ? 'text-violet-700' : 'text-slate-400'}>{fmtQty(r.diff_qty)}</b> },
                 { key: 'val', header: 'Value KWD', align: 'right', value: (r) => (r.erp_value ? Number(Number(r.erp_value).toFixed(3)) : null) },
                 { key: 'since', header: 'In store since', value: (r) => r.since_date, render: (r) => fmtDate(r.since_date) },

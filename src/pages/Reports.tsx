@@ -123,11 +123,11 @@ export default function Reports() {
         </div>} />
       {err && <Alert tone="bad">{err}</Alert>}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card title="Allocation tracker (your current format)">
+        <Card title="📊 Allocation tracker (same as your old Excel)">
           <p className="mb-3 text-sm text-slate-600">Same layout as the tracker you keep today - received dates, SKUs sent/received, days and SLA per store - but filled automatically, plus a qty-level sheet.</p>
           <button className="btn-primary" onClick={exportTracker} disabled={!legs || !!busy}>{busy === 'tracker' ? 'Building…' : '⬇ Download tracker'}</button>
         </Card>
-        <Card title="Discrepancy report">
+        <Card title="⚠️ Problems report">
           <p className="mb-3 text-sm text-slate-600">Every short / over / wrong / not-received line with the store's reason and HO decision, with KWD value where cost is known.</p>
           <button className="btn-primary" onClick={exportDiscrepancies} disabled={!!busy}>{busy === 'disc' ? 'Building…' : '⬇ Download discrepancies'}</button>
         </Card>

@@ -67,16 +67,15 @@ export default function StvUpload() {
 
   return (
     <div>
-      <PageHeader title="Upload STV" subtitle="Upload the Stock Transfer Voucher PDF from the ERP. Sending stores upload their dispatch STV; receiving stores upload the Allocation → D.S STV." />
+      <PageHeader title="Upload STV" subtitle="Drop the STV PDF you printed from the ERP. The system works out by itself whether you sent or received stock." />
       <div className="mb-5 grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <FileDrop accept=".pdf,.xlsx,.csv" multiple onFiles={addFiles} label="Drop STV PDF(s) here" />
         </div>
-        <Card title="Which STV do I upload?">
-          <ul className="space-y-2 text-sm text-slate-700">
-            <li><Badge tone="info">Dispatch</Badge> You send stock: <b>your D.S / DC → other store's Allocation</b>. Upload it the same day.</li>
-            <li><Badge tone="good">Receipt</Badge> Goods arrived: <b>your Allocation → your D.S</b>. Upload it as soon as you post it - until then the stock is invisible in the app.</li>
-            <li className="text-xs text-slate-500">The system reads the store codes on the STV and works out which one it is.</li>
+        <Card title="Upload both kinds of STV">
+          <ul className="space-y-3 text-sm text-slate-700">
+            <li><b>📤 You sent stock</b><br />STV from your store to the other store's Allocation. Upload it the same day.</li>
+            <li><b>📥 You received stock</b><br />STV from your Allocation to your D.S. Upload it as soon as goods arrive - until then the app cannot sell them.</li>
           </ul>
         </Card>
       </div>
@@ -186,35 +185,45 @@ function JobCard({ job, update, remove }: { job: Job; update: (p: Partial<Job> |
       {job.stage === 'parsing' && <Spinner label="Reading STV…" />}
       {job.stage === 'failed' && <Alert tone="bad">{job.errors.join(' ')}</Alert>}
       {job.stage === 'done' && job.result && (
-        <Alert tone="good" title={`STV ${h.docNo} saved - ${job.result.lines} lines, ${fmtQty(job.result.qty)} pcs.`}>
+        <Alert tone="good" title={`✅ STV ${h.docNo} saved - ${job.result.lines} lines, ${fmtQty(job.result.qty)} pcs.`}>
           <Link className="link" to={`/stvs/${job.result.id}`}>Open STV →</Link>
         </Alert>
       )}
       {(job.stage === 'ready' || job.stage === 'saving') && (
         <div className="space-y-4">
-          {/* header */}
-          <div className="grid gap-3 md:grid-cols-4">
-            <Field label="STV No."><input className="input font-mono" value={h.docNo} disabled={job.kind === 'pdf'} onChange={(e) => update({ header: { ...h, docNo: e.target.value }, preview: null })} /></Field>
+          {/* what is this STV, in one sentence */}
+          {job.kind === 'pdf' && (
+            <div className={`rounded-lg border-2 p-4 ${dir === 'receipt' ? 'border-green-300 bg-green-50' : dir ? 'border-blue-300 bg-blue-50' : 'border-slate-200 bg-slate-50'}`}>
+              <div className="text-lg font-semibold">
+                {!pv && 'Checking…'}
+                {pv && dir === 'dispatch' && <>📤 Stock SENT from {siteOf(pv.from)} to {siteOf(pv.to)}</>}
+                {pv && dir === 'receipt' && <>📥 Stock RECEIVED at {siteOf(pv.to)}</>}
+                {pv && dir === 'direct' && <>🔁 Direct transfer {siteOf(pv.from)} → {siteOf(pv.to)}</>}
+                {pv && dir === 'other' && <>❔ Unusual transfer - head office will review it</>}
+                {pv && !dir && <>❔ Store not recognised</>}
+              </div>
+              <div className="text-sm text-slate-700">STV <b>{h.docNo}</b> · {fmtDate(h.date)} · {new Set(job.lines.map((l) => l.itemCode)).size} items · {fmtQty(totalQty)} pcs</div>
+              {pv && dir === 'dispatch' && <div className="mt-1 text-xs text-slate-600">It now waits in "{pv.to.name}" until {siteOf(pv.to)} receives it.</div>}
+              {pv && dir === 'receipt' && <div className="mt-1 text-xs text-slate-600">Moved from "{pv.from.name}" into the store - the app can sell it now.</div>}
+              <div className="mt-1 text-xs text-slate-400">ERP: {h.fromName} {h.fromCode} → {h.toName} {h.toCode}</div>
+            </div>
+          )}
+          {job.kind === 'pdf' && !h.date && (
+            <div className="w-48"><Field label="STV date (could not read it)"><input className="input" type="date" value={h.date ?? ''} onChange={(e) => update({ header: { ...h, date: e.target.value } })} /></Field></div>
+          )}
+          {job.kind !== 'pdf' && <div className="grid gap-3 md:grid-cols-4">
+            <Field label="STV No."><input className="input font-mono" value={h.docNo} onChange={(e) => update({ header: { ...h, docNo: e.target.value }, preview: null })} /></Field>
             <Field label="STV date"><input className="input" type="date" value={h.date ?? ''} onChange={(e) => update({ header: { ...h, date: e.target.value } })} /></Field>
-            {job.kind === 'pdf' ? (
-              <>
-                <Field label="From store"><div className="input bg-slate-50">{h.fromName} <span className="text-slate-400">{h.fromCode}</span></div></Field>
-                <Field label="To store"><div className="input bg-slate-50">{h.toName} <span className="text-slate-400">{h.toCode}</span></div></Field>
-              </>
-            ) : (
-              <>
-                <LocationPicker label="From store" value={h.fromCode} onChange={(code, name) => update({ header: { ...h, fromCode: code, fromName: name }, preview: null })} />
-                <LocationPicker label="To store" value={h.toCode} onChange={(code, name) => update({ header: { ...h, toCode: code, toName: name }, preview: null })} />
-              </>
-            )}
-          </div>
-          <div className="text-sm text-slate-600">
+            <LocationPicker label="From store" value={h.fromCode} onChange={(code, name) => update({ header: { ...h, fromCode: code, fromName: name }, preview: null })} />
+            <LocationPicker label="To store" value={h.toCode} onChange={(code, name) => update({ header: { ...h, toCode: code, toName: name }, preview: null })} />
+          </div>}
+          {job.kind !== 'pdf' && <div className="text-sm text-slate-600">
             <b>{job.lines.length}</b> lines · <b>{fmtQty(totalQty)}</b> pcs
             {pv && dir && <> · {dir === 'dispatch' && <>Goes from <b>{siteOf(pv.from)}</b> into <b>{pv.to.name}</b> - waits there until <b>{siteOf(pv.to)}</b> receives it.</>}
               {dir === 'receipt' && <><b>{siteOf(pv.to)}</b> moves stock from <b>{pv.from.name}</b> into its D.S (stock becomes sellable).</>}
               {dir === 'direct' && <>Direct transfer {siteOf(pv.from)} → {siteOf(pv.to)} (no Allocation store).</>}
               {dir === 'other' && <>This is not an allocation movement; it will be recorded for head office review.</>}</>}
-          </div>
+          </div>}
 
           {[...blocking].map((e) => <Alert key={e} tone="bad">{e}</Alert>)}
           {pv?.duplicate && <Alert tone="bad" title="Already uploaded">STV {pv.duplicate.doc_no} is already in the system. <Link className="link" to={`/stvs/${pv.duplicate.id}`}>View it</Link></Alert>}
@@ -230,7 +239,7 @@ function JobCard({ job, update, remove }: { job: Job; update: (p: Partial<Job> |
           {/* plan link for dispatches */}
           {pv && (dir === 'dispatch' || dir === 'direct') && pv.can_submit && (
             <div>
-              <div className="label">Allocation plan this STV fulfils</div>
+              <div className="mb-1 font-semibold">Which transfer plan is this for?</div>
               <div className="space-y-1.5">
                 {pv.leg_suggestions.map((s) => (
                   <label key={s.leg_id} className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50">
@@ -242,7 +251,7 @@ function JobCard({ job, update, remove }: { job: Job; update: (p: Partial<Job> |
                 ))}
                 <label className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50">
                   <input type="radio" name={`leg-${job.id}`} checked={job.legId === ''} onChange={() => update({ legId: '' })} />
-                  No plan - unplanned transfer <span className="text-xs text-slate-500">(head office will be asked to review it)</span>
+                  Not part of any plan <span className="text-xs text-slate-500">(head office will check it)</span>
                 </label>
               </div>
             </div>
@@ -251,7 +260,7 @@ function JobCard({ job, update, remove }: { job: Job; update: (p: Partial<Job> |
           {/* dispatch links for receipts */}
           {pv && dir === 'receipt' && pv.can_submit && (
             <div>
-              <div className="label">Which transfers are you receiving?</div>
+              <div className="mb-1 font-semibold">Which transfers are you receiving? <span className="text-xs font-normal text-slate-500">(already ticked for you)</span></div>
               {pv.dispatch_suggestions.length === 0 ? (
                 <Alert tone="warn">No open dispatch into {pv.from.name} matches these items. You can still save - the quantities will be flagged as "received without dispatch" (e.g. old stock sitting in the Allocation store).</Alert>
               ) : (
@@ -269,45 +278,56 @@ function JobCard({ job, update, remove }: { job: Job; update: (p: Partial<Job> |
             </div>
           )}
 
-          {/* comparison */}
-          {compare && counts && (
-            <div className="rounded-md border border-slate-200">
-              <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 text-sm">
-                <b>{dir === 'receipt' ? 'Compared with what was dispatched' : 'Compared with the allocation plan'}:</b>
-                <Badge tone="good">{counts.ok} match</Badge>
-                {counts.short > 0 && <Badge tone="warn">{counts.short} short</Badge>}
-                {counts.missing > 0 && <Badge tone="bad">{counts.missing} {dir === 'receipt' ? 'not received' : 'not sent'}</Badge>}
-                {counts.over > 0 && <Badge tone="purple">{counts.over} over</Badge>}
-                {counts.extra > 0 && <Badge tone="purple">{counts.extra} {dir === 'receipt' ? 'not dispatched' : 'not in plan'}</Badge>}
-                <button className="btn-ghost btn-sm ml-auto" onClick={() => setShowAll(!showAll)}>{showAll ? 'Only differences' : 'Show all lines'}</button>
-              </div>
-              <div className="max-h-80 overflow-y-auto">
-                <table className="w-full">
-                  <thead><tr><th className="th">Item</th><th className="th">Name</th><th className="th text-right">{dir === 'receipt' ? 'Open (sent)' : 'Planned'}</th><th className="th text-right">On STV</th><th className="th text-right">Diff</th><th className="th">Status</th></tr></thead>
-                  <tbody>
-                    {compare.filter((c) => showAll || c.status !== 'ok').map((c) => (
-                      <tr key={c.item_code}>
-                        <td className="td font-mono text-xs">{c.item_code}</td><td className="td">{c.name}</td>
-                        <td className="td num">{fmtQty(c.expected)}</td><td className="td num">{fmtQty(c.actual)}</td>
-                        <td className={`td num font-medium ${c.diff < 0 ? 'text-red-700' : c.diff > 0 ? 'text-violet-700' : ''}`}>{c.diff > 0 ? '+' : ''}{fmtQty(c.diff)}</td>
-                        <td className="td">{{ ok: <Badge tone="good">Match</Badge>, short: <Badge tone="warn">Short</Badge>, missing: <Badge tone="bad">{dir === 'receipt' ? 'Not received' : 'Not sent'}</Badge>, over: <Badge tone="purple">Over</Badge>, extra: <Badge tone="purple">{dir === 'receipt' ? 'Not dispatched' : 'Not in plan'}</Badge> }[c.status]}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {!showAll && compare.every((c) => c.status === 'ok') && <div className="p-3 text-sm text-green-700">✔ Every line matches.</div>}
-              </div>
-              {compare.some((c) => c.status !== 'ok') && (
-                <div className="border-t border-slate-100 px-3 py-2 text-xs text-slate-600">
-                  You can still save. Differences go to <b>Discrepancies</b>, where {dir === 'receipt' ? 'the receiving store' : 'the sending store'} gives a reason and head office approves.
+          {/* comparison - verdict first, details below */}
+          {compare && counts && (() => {
+            const diffCount = compare.filter((c) => c.status !== 'ok').length;
+            const against = dir === 'receipt' ? 'what was sent to you' : 'the plan';
+            const L = dir === 'receipt'
+              ? { short: 'received less', missing: 'not received', over: 'received extra', extra: 'never sent' }
+              : { short: 'sent less', missing: 'not sent', over: 'sent extra', extra: 'not in plan' };
+            return (
+              <div className="rounded-lg border border-slate-200">
+                <div className={`px-4 py-3 ${diffCount ? 'bg-amber-50' : 'bg-green-50'}`}>
+                  <div className="font-semibold">
+                    {diffCount === 0 ? `✅ Everything matches ${against} (${counts.ok} items).` : `⚠️ ${diffCount} item${diffCount === 1 ? ' is' : 's are'} different from ${against}.`}
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    <Badge tone="good">{counts.ok} match</Badge>
+                    {counts.short > 0 && <Badge tone="warn">{counts.short} {L.short}</Badge>}
+                    {counts.missing > 0 && <Badge tone="bad">{counts.missing} {L.missing}</Badge>}
+                    {counts.over > 0 && <Badge tone="purple">{counts.over} {L.over}</Badge>}
+                    {counts.extra > 0 && <Badge tone="purple">{counts.extra} {L.extra}</Badge>}
+                  </div>
+                  {diffCount > 0 && <div className="mt-2 text-sm text-slate-700">You can still save. After saving, give a reason for these items under <b>Problems to explain</b>.</div>}
                 </div>
-              )}
-            </div>
-          )}
+                {(diffCount > 0 || showAll) && (
+                  <div className="max-h-80 overflow-y-auto">
+                    <table className="w-full">
+                      <thead><tr><th className="th">Item</th><th className="th">Name</th><th className="th text-right">{dir === 'receipt' ? 'Sent to you' : 'Planned'}</th><th className="th text-right">On this STV</th><th className="th text-right">Difference</th><th className="th">What happened</th></tr></thead>
+                      <tbody>
+                        {compare.filter((c) => showAll || c.status !== 'ok').map((c) => (
+                          <tr key={c.item_code}>
+                            <td className="td font-mono text-xs">{c.item_code}</td><td className="td">{c.name}</td>
+                            <td className="td num">{fmtQty(c.expected)}</td><td className="td num">{fmtQty(c.actual)}</td>
+                            <td className={`td num font-medium ${c.diff < 0 ? 'text-red-700' : c.diff > 0 ? 'text-violet-700' : ''}`}>{c.diff > 0 ? '+' : ''}{fmtQty(c.diff)}</td>
+                            <td className="td">{c.status === 'ok' ? <Badge tone="good">OK</Badge> : <Badge tone={c.status === 'short' ? 'warn' : c.status === 'missing' ? 'bad' : 'purple'}>{L[c.status]}</Badge>}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                <div className="border-t border-slate-100 px-3 py-1.5 text-right">
+                  <button className="btn-ghost btn-sm" onClick={() => setShowAll(!showAll)}>{showAll ? 'Show only differences' : 'Show all items'}</button>
+                </div>
+              </div>
+            );
+          })()}
 
           {job.message && <Alert tone="bad">{job.message}</Alert>}
-          <div className="flex justify-end">
-            <button className="btn-primary" disabled={!canSave || job.stage === 'saving'} onClick={save}>
+          <div className="flex items-center justify-end gap-3">
+            {!canSave && pv && !blocking.length && !pv.duplicate && pv.can_submit && <span className="text-sm text-slate-500">Fill in the missing details above.</span>}
+            <button className="btn-primary px-6 py-2 text-base" disabled={!canSave || job.stage === 'saving'} onClick={save}>
               {job.stage === 'saving' ? 'Saving…' : 'Save STV'}
             </button>
           </div>

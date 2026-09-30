@@ -34,7 +34,7 @@ export default function Stvs() {
 
   return (
     <div>
-      <PageHeader title="STV register" subtitle="Every Stock Transfer Voucher uploaded, with the original file." actions={(a.isAdmin || a.profile?.role === 'store') && <Link to="/upload" className="btn-primary">⇪ Upload STV</Link>} />
+      <PageHeader title={a.isHO ? 'All STVs' : 'My STVs'} subtitle="Every STV that was uploaded. Click one to see its items and the original PDF." actions={(a.isAdmin || a.profile?.role === 'store') && <Link to="/upload" className="btn-primary">⇪ Upload STV</Link>} />
       {err && <Alert tone="bad">{err}</Alert>}
       <Card pad={false}>
         {!rows ? <Spinner /> : (
@@ -57,9 +57,9 @@ export default function Stvs() {
               { key: 'doc', header: 'STV No.', value: (r) => r.doc_no, render: (r) => <Link className="link font-mono" to={`/stvs/${r.id}`}>{r.doc_no}</Link> },
               { key: 'date', header: 'Date', value: (r) => r.stv_date, render: (r) => fmtDate(r.stv_date) },
               { key: 'type', header: 'Type', value: (r) => DIRECTION[r.direction].label, render: (r) => <Badge tone={DIRECTION[r.direction].tone} title={DIRECTION[r.direction].help}>{DIRECTION[r.direction].label}</Badge> },
-              { key: 'from', header: 'From (ERP)', value: (r) => a.locationLabel(r.from_code) },
-              { key: 'to', header: 'To (ERP)', value: (r) => a.locationLabel(r.to_code) },
-              { key: 'plan', header: 'Plan', value: (r) => (r.direction === 'dispatch' || r.direction === 'direct' ? (r.leg_id ? 'Linked' : 'Unplanned') : ''), render: (r) => (r.direction === 'dispatch' || r.direction === 'direct' ? (r.leg_id ? <Badge tone="good">Linked</Badge> : <Badge tone="purple">Unplanned</Badge>) : null) },
+              { key: 'from', header: 'From', value: (r) => a.locationLabel(r.from_code) },
+              { key: 'to', header: 'To', value: (r) => a.locationLabel(r.to_code) },
+              { key: 'plan', header: 'Plan', value: (r) => (r.direction === 'dispatch' || r.direction === 'direct' ? (r.leg_id ? 'In a plan' : 'No plan') : ''), render: (r) => (r.direction === 'dispatch' || r.direction === 'direct' ? (r.leg_id ? <Badge tone="good">In a plan</Badge> : <Badge tone="purple">No plan</Badge>) : null) },
               { key: 'lines', header: 'Lines', align: 'right', value: (r) => r.line_count },
               { key: 'qty', header: 'Qty', align: 'right', value: (r) => Number(r.total_qty), render: (r) => fmtQty(r.total_qty) },
               { key: 'by', header: 'Uploaded', value: (r) => r.uploaded_at, render: (r) => <span className="text-xs text-slate-500">{fmtDateTime(r.uploaded_at)}{names[r.uploaded_by ?? ''] && <> · {names[r.uploaded_by!]}</>}</span> },

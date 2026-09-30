@@ -23,6 +23,7 @@ const Users = lazy(() => import('./pages/Users'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Audit = lazy(() => import('./pages/Audit'));
 const Account = lazy(() => import('./pages/Account'));
+const Help = lazy(() => import('./pages/Help'));
 
 function Guard({ when, children }: { when: boolean; children: ReactNode }) {
   return when ? <>{children}</> : <Navigate to="/" replace />;
@@ -77,6 +78,7 @@ export default function App() {
           <Route path="/settings" element={<Guard when={a.isAdmin}><Settings /></Guard>} />
           <Route path="/audit" element={<Guard when={a.isHO}><Audit /></Guard>} />
           <Route path="/account" element={<Account />} />
+          <Route path="/help" element={<Help />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

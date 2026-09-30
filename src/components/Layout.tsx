@@ -3,83 +3,83 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { ROLE_LABEL } from '../lib/labels';
 
-interface NavItem { to: string; label: string; icon: string; show: boolean }
+interface NavItem { to: string; label: string; icon: string; hint?: string }
 
 export default function Layout({ children }: { children: ReactNode }) {
   const a = useAuth();
   const [open, setOpen] = useState(false);
-  const storeOrAdmin = a.isAdmin || a.profile?.role === 'store';
-  const sections: { title: string; items: NavItem[] }[] = [
-    {
-      title: 'Operations',
-      items: [
-        { to: '/', label: 'Dashboard', icon: '◧', show: true },
-        { to: '/upload', label: 'Upload STV', icon: '⇪', show: storeOrAdmin },
-        { to: '/allocations', label: 'Allocations', icon: '⇄', show: true },
-        { to: '/in-transit', label: 'In transit', icon: '⏱', show: true },
-        { to: '/discrepancies', label: 'Discrepancies', icon: '⚑', show: true },
-        { to: '/stvs', label: 'STV register', icon: '☰', show: true },
-        { to: '/virtual-stores', label: 'Virtual store watch', icon: '◎', show: true },
-      ],
-    },
-    {
-      title: 'Data',
-      items: [
-        { to: '/items', label: 'Items masterlist', icon: '▦', show: true },
-        { to: '/reports', label: 'Reports (Excel)', icon: '⬇', show: true },
-      ],
-    },
-    {
-      title: 'Admin',
-      items: [
-        { to: '/users', label: 'Users & access', icon: '☺', show: a.isAdmin },
-        { to: '/settings', label: 'Settings', icon: '⚙', show: a.isAdmin },
-        { to: '/audit', label: 'Audit log', icon: '✎', show: a.isHO },
-      ],
-    },
-  ];
-  const stores = a.isHO ? 'All stores' : a.mySiteIds.map((id) => a.siteName(id)).join(', ') || 'No store assigned';
+  const [more, setMore] = useState(false);
+  const isStore = a.profile?.role === 'store';
+
+  // Store staff only see what they need every day; head office gets the control pages.
+  const main: NavItem[] = isStore
+    ? [
+        { to: '/', label: 'Home - my tasks', icon: '🏠' },
+        { to: '/upload', label: 'Upload STV', icon: '⬆️', hint: 'sent or received stock' },
+        { to: '/discrepancies', label: 'Problems to explain', icon: '⚠️' },
+        { to: '/stvs', label: 'My STVs', icon: '📄' },
+        { to: '/help', label: 'How it works', icon: '❓' },
+      ]
+    : [
+        { to: '/', label: 'Home', icon: '🏠' },
+        { to: '/allocations', label: 'Transfer plans', icon: '📋' },
+        { to: '/in-transit', label: 'Waiting to be received', icon: '🚚' },
+        { to: '/discrepancies', label: 'Problems & approvals', icon: '⚠️' },
+        { to: '/virtual-stores', label: 'Stuck stock check', icon: '🔍' },
+        { to: '/reports', label: 'Excel reports', icon: '📊' },
+      ];
+  const extra: NavItem[] = isStore
+    ? []
+    : [
+        ...(a.isAdmin ? [{ to: '/upload', label: 'Upload STV', icon: '⬆️' }] : []),
+        { to: '/stvs', label: 'All STVs', icon: '📄' },
+        { to: '/items', label: 'Items list', icon: '📦' },
+        ...(a.isAdmin ? [{ to: '/users', label: 'Users', icon: '👤' }, { to: '/settings', label: 'Settings', icon: '⚙️' }] : []),
+        { to: '/audit', label: 'Activity log', icon: '🕘' },
+        { to: '/help', label: 'How it works', icon: '❓' },
+      ];
+
+  const link = (i: NavItem) => (
+    <NavLink key={i.to} to={i.to} end={i.to === '/'} onClick={() => setOpen(false)}
+      className={({ isActive }) => `flex items-center gap-2.5 rounded-lg px-3 py-2 text-[15px] ${isActive ? 'bg-blue-50 font-semibold text-blue-800' : 'text-slate-700 hover:bg-slate-100'}`}>
+      <span className="w-5 text-center" aria-hidden>{i.icon}</span>
+      <span>{i.label}{i.hint && <span className="block text-xs font-normal text-slate-500">{i.hint}</span>}</span>
+    </NavLink>
+  );
 
   const nav = (
-    <nav className="flex flex-col gap-4 p-3">
-      {sections.map((s) => {
-        const items = s.items.filter((i) => i.show);
-        if (!items.length) return null;
-        return (
-          <div key={s.title}>
-            <div className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{s.title}</div>
-            {items.map((i) => (
-              <NavLink key={i.to} to={i.to} end={i.to === '/'} onClick={() => setOpen(false)}
-                className={({ isActive }) => `flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${isActive ? 'bg-blue-50 font-semibold text-blue-800' : 'text-slate-700 hover:bg-slate-100'}`}>
-                <span className="w-4 text-center text-slate-400" aria-hidden>{i.icon}</span>
-                {i.label}
-              </NavLink>
-            ))}
-          </div>
-        );
-      })}
+    <nav className="flex flex-col gap-1 p-3">
+      {main.map(link)}
+      {extra.length > 0 && (
+        <>
+          <button type="button" onClick={() => setMore(!more)} className="mt-3 flex items-center gap-2 px-3 py-1 text-left text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-600">
+            {more ? '▾' : '▸'} More
+          </button>
+          {more && extra.map(link)}
+        </>
+      )}
     </nav>
   );
+  const stores = a.isHO ? 'All stores' : a.mySiteIds.map((id) => a.siteName(id)).join(', ') || 'No store assigned';
 
   return (
     <div className="min-h-screen lg:flex">
-      <aside className="hidden w-56 shrink-0 border-r border-slate-200 bg-white lg:block">
-        <div className="border-b border-slate-100 px-4 py-4">
-          <div className="text-base font-bold text-blue-800">IALC</div>
-          <div className="text-xs text-slate-500">Allocation Control System</div>
+      <aside className="hidden w-60 shrink-0 border-r border-slate-200 bg-white lg:block">
+        <div className="border-b border-slate-100 px-5 py-4">
+          <div className="text-lg font-bold text-blue-800">IALC</div>
+          <div className="text-xs text-slate-500">Store transfers control</div>
         </div>
         {nav}
       </aside>
       <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-200 bg-white/95 px-4 py-2 backdrop-blur">
-          <button className="btn-ghost lg:hidden" onClick={() => setOpen(!open)} aria-label="Menu">☰</button>
-          <span className="font-bold text-blue-800 lg:hidden">IALC</span>
+          <button className="btn-ghost lg:hidden" onClick={() => setOpen(!open)} aria-label="Menu">☰ Menu</button>
           <div className="ml-auto flex items-center gap-3 text-right">
             <div className="hidden leading-tight sm:block">
               <div className="text-sm font-medium">{a.profile?.full_name}</div>
               <div className="text-xs text-slate-500">{a.profile && ROLE_LABEL[a.profile.role]} · {stores}</div>
             </div>
-            <NavLink to="/account" className="btn-ghost btn-sm">Account</NavLink>
+            <NavLink to="/account" className="btn-ghost btn-sm">My account</NavLink>
             <button className="btn-secondary btn-sm" onClick={a.signOut}>Sign out</button>
           </div>
         </header>

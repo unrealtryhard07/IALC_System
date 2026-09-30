@@ -74,7 +74,7 @@ export default function AllocationDetail() {
     downloadExcel(`${alloc.ref}_${a.siteName(leg.to_site_id)}`, [{
       name: `${alloc.ref} to ${a.siteName(leg.to_site_id)}`,
       title: `${alloc.ref} · ${a.siteName(alloc.from_site_id)} → ${a.siteName(leg.to_site_id)} · plan ${fmtDate(alloc.plan_date)}`,
-      columns: [{ header: 'Item Code', width: 12 }, { header: 'Item Name', width: 45 }, { header: 'Planned', numFmt: '#,##0.###' }, { header: 'Dispatched', numFmt: '#,##0.###' }, { header: 'Difference', numFmt: '#,##0.###' }, { header: 'Received', numFmt: '#,##0.###' }, { header: 'Still in allocation store', numFmt: '#,##0.###' }, { header: 'Status', width: 16 }, { header: 'Reason', width: 30 }, { header: 'Reason status', width: 14 }, { header: 'Note', width: 30 }],
+      columns: [{ header: 'Item Code', width: 12 }, { header: 'Item Name', width: 45 }, { header: 'Planned', numFmt: '#,##0.###' }, { header: 'Sent', numFmt: '#,##0.###' }, { header: 'Difference', numFmt: '#,##0.###' }, { header: 'Received', numFmt: '#,##0.###' }, { header: 'Waiting to be received', numFmt: '#,##0.###' }, { header: 'Status', width: 16 }, { header: 'Reason', width: 30 }, { header: 'Reason status', width: 14 }, { header: 'Note', width: 30 }],
       rows: items.map((i) => [i.item_code, i.item_name, i.planned_qty, i.dispatched_qty, i.dispatch_gap, i.received_qty, i.open_qty, DISPATCH_STATUS[i.dispatch_status].label, a.reasons.find((r) => r.code === i.reason_code)?.label ?? '', i.resolution_status ?? '', i.resolution_note ?? '']),
     }]);
   };
@@ -108,14 +108,14 @@ export default function AllocationDetail() {
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             <Stat label="Planned" value={fmtQty(leg.planned_qty)} sub={`${leg.planned_skus} SKUs`} />
-            <Stat label="Dispatched" value={fmtQty(leg.dispatched_qty)} sub={`${leg.dispatched_skus} SKUs · ${fmtPct(leg.dispatched_qty, leg.planned_qty)}`} tone={leg.dispatched_qty ? 'info' : 'neutral'} />
+            <Stat label="Sent" value={fmtQty(leg.dispatched_qty)} sub={`${leg.dispatched_skus} SKUs · ${fmtPct(leg.dispatched_qty, leg.planned_qty)}`} tone={leg.dispatched_qty ? 'info' : 'neutral'} />
             <Stat label="Received" value={fmtQty(leg.received_qty)} sub={`${leg.received_skus} SKUs · ${fmtPct(leg.received_qty, leg.dispatched_qty)}`} tone={leg.received_qty ? 'good' : 'neutral'} />
-            <Stat label="Still in allocation store" value={fmtQty(leg.open_qty)} sub={leg.open_value ? fmtKwd(leg.open_value) : undefined} tone={leg.open_qty ? 'warn' : 'good'} />
-            <Stat label="Open issues" value={leg.open_issues} sub={`${leg.pending_issues} awaiting HO`} tone={leg.open_issues ? 'bad' : 'good'} />
+            <Stat label="Waiting to be received" value={fmtQty(leg.open_qty)} sub={leg.open_value ? fmtKwd(leg.open_value) : undefined} tone={leg.open_qty ? 'warn' : 'good'} />
+            <Stat label="Problems" value={leg.open_issues} sub={`${leg.pending_issues} awaiting HO`} tone={leg.open_issues ? 'bad' : 'good'} />
           </div>
 
-          <Card title="STVs for this destination" pad={false}>
-            {stvs.length === 0 ? <div className="p-4 text-sm text-slate-500">No dispatch STV uploaded yet{leg.days_waiting_dispatch != null && <> - waiting {leg.days_waiting_dispatch} day(s)</>}.</div> : (
+          <Card title="STVs uploaded for this store" pad={false}>
+            {stvs.length === 0 ? <div className="p-4 text-sm text-slate-500">Not sent yet - no STV uploaded{leg.days_waiting_dispatch != null && <> - waiting {leg.days_waiting_dispatch} day(s)</>}.</div> : (
               <table className="w-full"><tbody>
                 {stvs.map((s) => (
                   <tr key={s.id}>
@@ -136,7 +136,7 @@ export default function AllocationDetail() {
             </Alert>
           )}
 
-          <Card pad={false} title="Line by line" actions={<>
+          <Card pad={false} title="Item by item" actions={<>
             {canExplain && <button className="btn-secondary btn-sm" onClick={exportPickList}>⬇ Pick list</button>}
             <button className="btn-secondary btn-sm" onClick={exportLeg}>⬇ Excel</button>
           </>}>
@@ -161,10 +161,10 @@ export default function AllocationDetail() {
                   { key: 'code', header: 'Item', value: (r) => r.item_code, className: 'font-mono text-xs' },
                   { key: 'name', header: 'Name', value: (r) => r.item_name, className: 'min-w-[220px]' },
                   { key: 'planned', header: 'Planned', align: 'right', value: (r) => r.planned_qty, render: (r) => fmtQty(r.planned_qty) },
-                  { key: 'disp', header: 'Dispatched', align: 'right', value: (r) => r.dispatched_qty, render: (r) => fmtQty(r.dispatched_qty) },
-                  { key: 'gap', header: 'Diff', align: 'right', value: (r) => r.dispatch_gap, render: (r) => r.leg_dispatched ? <span className={r.dispatch_gap < 0 ? 'text-red-700' : r.dispatch_gap > 0 ? 'text-violet-700' : 'text-slate-400'}>{r.dispatch_gap > 0 ? '+' : ''}{fmtQty(r.dispatch_gap)}</span> : '–' },
+                  { key: 'disp', header: 'Sent', align: 'right', value: (r) => r.dispatched_qty, render: (r) => fmtQty(r.dispatched_qty) },
+                  { key: 'gap', header: 'Difference', align: 'right', value: (r) => r.dispatch_gap, render: (r) => r.leg_dispatched ? <span className={r.dispatch_gap < 0 ? 'text-red-700' : r.dispatch_gap > 0 ? 'text-violet-700' : 'text-slate-400'}>{r.dispatch_gap > 0 ? '+' : ''}{fmtQty(r.dispatch_gap)}</span> : '–' },
                   { key: 'recv', header: 'Received', align: 'right', value: (r) => r.received_qty, render: (r) => fmtQty(r.received_qty) },
-                  { key: 'open', header: 'In allocation store', align: 'right', value: (r) => r.open_qty, render: (r) => (r.open_qty ? <b className="text-amber-700">{fmtQty(r.open_qty)}</b> : '–') },
+                  { key: 'open', header: 'Waiting', align: 'right', value: (r) => r.open_qty, render: (r) => (r.open_qty ? <b className="text-amber-700">{fmtQty(r.open_qty)}</b> : '–') },
                   { key: 'status', header: 'Status', value: (r) => ['not_sent', 'unplanned', 'short', 'over', 'awaiting_dispatch', 'ok'].indexOf(r.dispatch_status), render: (r) => { const s = DISPATCH_STATUS[r.dispatch_status]; return <Badge tone={s.tone}>{s.label}</Badge>; } },
                   { key: 'res', header: 'Reason', value: (r) => r.resolution_status ?? (['short', 'not_sent', 'over', 'unplanned'].includes(r.dispatch_status) ? 'needs reason' : ''),
                     render: (r) => (['short', 'not_sent', 'over', 'unplanned'].includes(r.dispatch_status) ? <ResolutionBadge status={r.resolution_status} reason={r.reason_code} note={r.resolution_note} /> : null) },
@@ -185,7 +185,7 @@ function CancelModal({ id, onClose, onDone }: { id: string; onClose: () => void;
   const [reason, setReason] = useState('');
   const [err, setErr] = useState('');
   return (
-    <Modal open title="Cancel allocation plan" onClose={onClose} footer={<>
+    <Modal open title="Cancel this plan" onClose={onClose} footer={<>
       <button className="btn-secondary" onClick={onClose}>Keep</button>
       <button className="btn-danger" onClick={() => rpc('cancel_allocation', { p_id: id, p_reason: reason }).then(onDone).catch((e) => setErr(friendlyError(e)))}>Cancel plan</button>
     </>}>
