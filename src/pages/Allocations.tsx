@@ -51,8 +51,8 @@ export default function Allocations() {
         subtitle={isStore ? 'Every allocation coming to your store or going out of it, and where it is right now.' : 'Every allocation, from plan to fully received. View it per plan or per store.'}
         actions={a.isAdmin && <Link to="/allocations/new" className="btn-primary">+ Upload a transfer plan</Link>} />
       <Tabs value={view} onChange={setView} tabs={isStore
-        ? [{ value: 'in', label: `📥 Coming to me (${(legs ?? []).filter((l) => a.mySiteIds.includes(l.to_site_id) && !['completed', 'cancelled'].includes(l.status)).length} open)` },
-           { value: 'out', label: `📤 Sending out (${(legs ?? []).filter((l) => a.mySiteIds.includes(l.from_site_id) && !['completed', 'cancelled'].includes(l.status)).length} open)` }]
+        ? [{ value: 'in', label: `Coming to me (${(legs ?? []).filter((l) => a.mySiteIds.includes(l.to_site_id) && !['completed', 'cancelled'].includes(l.status)).length} open)` },
+           { value: 'out', label: `Sending out (${(legs ?? []).filter((l) => a.mySiteIds.includes(l.from_site_id) && !['completed', 'cancelled'].includes(l.status)).length} open)` }]
         : [{ value: 'plans', label: 'By plan' }, { value: 'stores', label: 'By store (every route)' }]} />
       {err && <Alert tone="bad">{err}</Alert>}
       {(view === 'in' || view === 'out' || view === 'stores') && (

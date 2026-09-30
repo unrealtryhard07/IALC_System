@@ -4,6 +4,7 @@ import { fmtDate, fmtPct, fmtQty } from '../lib/format';
 import { LEG_STATUS } from '../lib/labels';
 import type { LegRow } from '../lib/types';
 import { DataTable } from './DataTable';
+import { Icon } from './Icon';
 import { Badge } from './ui';
 
 export type Perspective = 'in' | 'out' | 'all';
@@ -47,7 +48,7 @@ export function stepsOf(l: LegRow): { label: string; state: StepState; sub: stri
 const DOT: Record<StepState, string> = {
   done: 'bg-green-600 text-white border-green-600',
   partial: 'bg-amber-400 text-white border-amber-400',
-  now: 'bg-white text-blue-700 border-blue-600 ring-2 ring-blue-200',
+  now: 'bg-white text-brand-600 border-brand-500 ring-2 ring-brand-100',
   todo: 'bg-white text-slate-300 border-slate-300',
 };
 
@@ -59,7 +60,7 @@ export function Progress({ leg, compact }: { leg: LegRow; compact?: boolean }) {
         <li key={s.label} className="flex items-start">
           <div className={`flex flex-col items-center ${compact ? 'w-14' : 'w-24'}`}>
             <span title={`${s.label}: ${s.sub}`} className={`flex items-center justify-center rounded-full border-2 font-bold ${compact ? 'h-5 w-5 text-[10px]' : 'h-8 w-8 text-sm'} ${DOT[s.state]}`}>
-              {s.state === 'done' ? '✓' : s.state === 'partial' ? '½' : i + 1}
+              {s.state === 'done' ? <Icon name="check" className={compact ? 'h-3 w-3' : 'h-4 w-4'} /> : s.state === 'partial' ? '½' : i + 1}
             </span>
             <span className={`mt-0.5 text-center leading-tight ${compact ? 'text-[10px]' : 'text-xs font-medium'} ${s.state === 'todo' ? 'text-slate-400' : 'text-slate-700'}`}>{s.label}</span>
             {!compact && <span className="text-center text-[11px] text-slate-500">{s.sub}</span>}

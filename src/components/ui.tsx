@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import type { Tone } from '../lib/labels';
+import { Icon, type IconName } from './Icon';
 
 const TONES: Record<Tone, string> = {
   neutral: 'bg-slate-100 text-slate-700 ring-slate-300',
@@ -26,7 +27,7 @@ export function PageHeader({ title, subtitle, actions }: { title: ReactNode; sub
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h1>
         {subtitle && <p className="mt-0.5 text-sm text-slate-500">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -63,7 +64,7 @@ export function Stat({ label, value, sub, tone, onClick }: { label: string; valu
 export function Spinner({ label = 'Loading…' }: { label?: string }) {
   return (
     <div className="flex items-center gap-2 p-6 text-sm text-slate-500">
-      <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-blue-700" />
+      <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-brand-500" />
       {label}
     </div>
   );
@@ -75,11 +76,11 @@ export function Empty({ children }: { children: ReactNode }) {
 
 export function Alert({ tone = 'info', title, children }: { tone?: 'info' | 'warn' | 'bad' | 'good'; title?: ReactNode; children?: ReactNode }) {
   const cls = { info: 'border-blue-200 bg-blue-50 text-blue-900', warn: 'border-amber-200 bg-amber-50 text-amber-900', bad: 'border-red-200 bg-red-50 text-red-900', good: 'border-green-200 bg-green-50 text-green-900' }[tone];
-  const icon = { info: 'ℹ', warn: '⚠', bad: '✖', good: '✔' }[tone];
+  const icon: IconName = { info: 'info', warn: 'alert', bad: 'x', good: 'checkCircle' }[tone] as IconName;
   return (
-    <div className={`rounded-md border px-3 py-2 text-sm ${cls}`} role={tone === 'bad' ? 'alert' : undefined}>
+    <div className={`rounded-lg border px-3 py-2.5 text-sm ${cls}`} role={tone === 'bad' ? 'alert' : undefined}>
       <div className="flex gap-2">
-        <span aria-hidden className="font-bold">{icon}</span>
+        <Icon name={icon} className="mt-px h-4 w-4 shrink-0" />
         <div className="min-w-0 flex-1">
           {title && <div className="font-semibold">{title}</div>}
           {children && <div className={title ? 'mt-0.5' : ''}>{children}</div>}
@@ -102,7 +103,7 @@ export function Modal({ open, title, onClose, children, footer, wide }: { open: 
       <div role="dialog" aria-modal className={`card w-full ${wide ? 'max-w-3xl' : 'max-w-lg'}`} onMouseDown={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
           <h3 className="font-semibold">{title}</h3>
-          <button className="btn-ghost btn-sm" onClick={onClose} aria-label="Close">✕</button>
+          <button className="btn-ghost btn-sm" onClick={onClose} aria-label="Close"><Icon name="x" className="h-4 w-4" /></button>
         </div>
         <div className="max-h-[70vh] overflow-y-auto p-4">{children}</div>
         {footer && <div className="flex justify-end gap-2 border-t border-slate-100 px-4 py-3">{footer}</div>}
@@ -126,7 +127,7 @@ export function Tabs<T extends string>({ value, onChange, tabs }: { value: T; on
     <div className="mb-4 flex flex-wrap gap-1 border-b border-slate-200">
       {tabs.map((t) => (
         <button key={t.value} type="button" onClick={() => onChange(t.value)}
-          className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${value === t.value ? 'border-blue-700 text-blue-800' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+          className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${value === t.value ? 'border-brand-500 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
           {t.label}
         </button>
       ))}
@@ -142,8 +143,8 @@ export function FileDrop({ accept, multiple, onFiles, label, disabled }: { accep
         e.preventDefault();
         if (!disabled) onFiles(Array.from(e.dataTransfer.files));
       }}
-      className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-600 hover:border-blue-500 hover:bg-blue-50/40 ${disabled ? 'pointer-events-none opacity-50' : ''}`}>
-      <span className="text-2xl" aria-hidden>⇪</span>
+      className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-600 transition hover:border-brand-400 hover:bg-brand-50/40 ${disabled ? 'pointer-events-none opacity-50' : ''}`}>
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-brand-600"><Icon name="upload" /></span>
       <span className="font-medium">{label}</span>
       <span className="text-xs text-slate-500">Drag & drop or click to choose ({accept.replaceAll(',', ', ')})</span>
       <input type="file" className="sr-only" accept={accept} multiple={multiple} disabled={disabled}

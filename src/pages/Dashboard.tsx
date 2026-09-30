@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { Icon, type IconName } from '../components/Icon';
 import { LegTable } from '../components/LegProgress';
 import { Alert, Badge, Card, Spinner } from '../components/ui';
 import { useAuth } from '../lib/auth';
@@ -67,17 +68,17 @@ export default function Dashboard() {
 
   const tasks: TaskProps[] = isStore
     ? [
-        { icon: '📥', count: k.incoming, title: k.incoming === 1 ? 'allocation coming to you' : 'allocations coming to you', text: `${k.incomingNotSent} not sent yet by the sender, ${k.incomingOnWay} on the way to you. See each one and where it is.`, to: '/allocations?tab=in', button: 'Track them', tone: k.incomingOnWay ? 'warn' : 'info' },
-        { icon: '📦', count: k.toSend, title: k.toSend === 1 ? 'plan to send' : 'plans to send', text: k.toSendLate ? `${k.toSendLate} are late. Pick the items, make the STV in the ERP, then upload it here.` : 'Pick the items, make the STV in the ERP, then upload it here.', to: '#to-send', button: 'See what to send', tone: k.toSendLate ? 'bad' : 'info' },
-        { icon: '🚚', count: k.toReceive, title: k.toReceive === 1 ? 'transfer to receive' : 'transfers to receive', text: k.toReceive ? `${fmtQty(k.toReceiveQty)} pcs are waiting for you (oldest ${k.oldest} days). Receive them in the ERP (Allocation → D.S) and upload that STV - until then the app cannot sell them.` : 'Nothing is waiting for you.', to: '/upload', button: 'Upload receiving STV', tone: k.oldest > a.receiptSla ? 'bad' : 'info' },
-        { icon: '⚠️', count: k.explain, title: k.explain === 1 ? 'problem to explain' : 'problems to explain', text: k.rejected ? `${k.rejected} reason(s) were rejected by head office - please explain again.` : 'Items sent short, not sent, or received short. Choose a reason for each.', to: '/discrepancies', button: 'Explain now', tone: k.explain ? 'warn' : 'info' },
+        { icon: 'inbox', count: k.incoming, title: k.incoming === 1 ? 'allocation coming to you' : 'allocations coming to you', text: `${k.incomingNotSent} not sent yet by the sender, ${k.incomingOnWay} on the way to you. See each one and where it is.`, to: '/allocations?tab=in', button: 'Track them', tone: k.incomingOnWay ? 'warn' : 'info' },
+        { icon: 'send', count: k.toSend, title: k.toSend === 1 ? 'plan to send' : 'plans to send', text: k.toSendLate ? `${k.toSendLate} are late. Pick the items, make the STV in the ERP, then upload it here.` : 'Pick the items, make the STV in the ERP, then upload it here.', to: '#to-send', button: 'See what to send', tone: k.toSendLate ? 'bad' : 'info' },
+        { icon: 'truck', count: k.toReceive, title: k.toReceive === 1 ? 'transfer to receive' : 'transfers to receive', text: k.toReceive ? `${fmtQty(k.toReceiveQty)} pcs are waiting for you (oldest ${k.oldest} days). Receive them in the ERP (Allocation → D.S) and upload that STV - until then the app cannot sell them.` : 'Nothing is waiting for you.', to: '/upload', button: 'Upload receiving STV', tone: k.oldest > a.receiptSla ? 'bad' : 'info' },
+        { icon: 'alert', count: k.explain, title: k.explain === 1 ? 'problem to explain' : 'problems to explain', text: k.rejected ? `${k.rejected} reason(s) were rejected by head office - please explain again.` : 'Items sent short, not sent, or received short. Choose a reason for each.', to: '/discrepancies', button: 'Explain now', tone: k.explain ? 'warn' : 'info' },
       ]
     : [
-        { icon: '✅', count: k.approve, title: k.approve === 1 ? 'explanation to approve' : 'explanations to approve', text: 'Stores gave reasons for short or missing stock. Approve or reject them.', to: '/discrepancies?tab=pending', button: 'Review', tone: k.approve ? 'purple' : 'info' },
-        { icon: '🚚', count: k.late, title: 'late receiving', text: k.late ? `${fmtQty(k.lateQty)} pcs sent more than ${a.receiptSla} day(s) ago are still not received${k.lateValue ? ` (${fmtKwd(k.lateValue)})` : ''}. Chase the stores.` : 'Every store received its stock on time.', to: '/in-transit?overdue=1', button: 'See who is late', tone: k.late ? 'bad' : 'info' },
-        { icon: '📦', count: k.toSend, title: 'plans not sent yet', text: k.toSendLate ? `${k.toSendLate} are later than ${a.dispatchSla} days.` : 'Plans the sending stores still have to send.', to: '/allocations?status=awaiting_dispatch', button: 'See plans', tone: k.toSendLate ? 'warn' : 'info' },
-        { icon: '⚠️', count: k.explain, title: 'problems without a reason', text: 'Differences the stores have not explained yet.', to: '/discrepancies', button: 'See problems', tone: k.explain ? 'warn' : 'info' },
-        { icon: '🔍', count: k.hasSnapshot ? k.stuckSkus : null, title: 'unknown stuck items', text: k.hasSnapshot ? `${fmtQty(k.stuckQty)} pcs sit in the virtual stores with no transfer explaining them.` : 'Upload the ERP stock report of the Allocation stores to find old stuck stock.', to: '/virtual-stores', button: k.hasSnapshot ? 'Check stuck stock' : 'Upload ERP report', tone: k.stuckSkus ? 'bad' : 'info' },
+        { icon: 'checkCircle', count: k.approve, title: k.approve === 1 ? 'explanation to approve' : 'explanations to approve', text: 'Stores gave reasons for short or missing stock. Approve or reject them.', to: '/discrepancies?tab=pending', button: 'Review', tone: k.approve ? 'purple' : 'info' },
+        { icon: 'truck', count: k.late, title: 'late receiving', text: k.late ? `${fmtQty(k.lateQty)} pcs sent more than ${a.receiptSla} day(s) ago are still not received${k.lateValue ? ` (${fmtKwd(k.lateValue)})` : ''}. Chase the stores.` : 'Every store received its stock on time.', to: '/in-transit?overdue=1', button: 'See who is late', tone: k.late ? 'bad' : 'info' },
+        { icon: 'send', count: k.toSend, title: 'plans not sent yet', text: k.toSendLate ? `${k.toSendLate} are later than ${a.dispatchSla} days.` : 'Plans the sending stores still have to send.', to: '/allocations?status=awaiting_dispatch', button: 'See plans', tone: k.toSendLate ? 'warn' : 'info' },
+        { icon: 'alert', count: k.explain, title: 'problems without a reason', text: 'Differences the stores have not explained yet.', to: '/discrepancies', button: 'See problems', tone: k.explain ? 'warn' : 'info' },
+        { icon: 'search', count: k.hasSnapshot ? k.stuckSkus : null, title: 'unknown stuck items', text: k.hasSnapshot ? `${fmtQty(k.stuckQty)} pcs sit in the virtual stores with no transfer explaining them.` : 'Upload the ERP stock report of the Allocation stores to find old stuck stock.', to: '/virtual-stores', button: k.hasSnapshot ? 'Check stuck stock' : 'Upload ERP report', tone: k.stuckSkus ? 'bad' : 'info' },
       ];
   const allClear = tasks.every((t) => !t.count);
 
@@ -88,13 +89,13 @@ export default function Dashboard() {
           <h1 className="text-2xl font-semibold">{greeting()}, {a.profile?.full_name?.split(' ')[0]}</h1>
           <p className="text-slate-500">{isStore ? `Here is what ${storeNames} needs to do today.` : 'Here is what needs your attention today.'} <span className="text-slate-400">· {fmtDate(kwToday())}</span></p>
         </div>
-        {isStore && <Link to="/upload" className="btn-primary px-5 py-2.5 text-base">⬆️ Upload STV</Link>}
-        {a.isAdmin && <Link to="/allocations/new" className="btn-primary px-5 py-2.5 text-base">📋 Upload a transfer plan</Link>}
+        {isStore && <Link to="/upload" className="btn-primary px-5 py-2.5 text-base"><Icon name="upload" className="h-4 w-4" />Upload STV</Link>}
+        {a.isAdmin && <Link to="/allocations/new" className="btn-primary px-5 py-2.5 text-base"><Icon name="upload" className="h-4 w-4" />Upload a transfer plan</Link>}
       </div>
 
       {a.isAdmin && <SetupChecklist />}
 
-      {allClear && <Alert tone="good" title="All done - nothing needs attention right now 🎉" />}
+      {allClear && <Alert tone="good" title="All done - nothing needs attention right now" />}
       <div className={`grid gap-4 sm:grid-cols-2 ${isStore ? 'lg:grid-cols-4' : 'lg:grid-cols-3 xl:grid-cols-5'}`}>
         {tasks.map((t) => <TaskCard key={t.title} {...t} />)}
       </div>
@@ -102,7 +103,7 @@ export default function Dashboard() {
       <HowItWorks compact />
 
       {isStore && (
-        <Card title="📥 Allocations coming to your store" pad={false} actions={<Link className="link text-sm" to="/allocations?tab=in">See all →</Link>}>
+        <Card title="Allocations coming to your store" pad={false} actions={<Link className="link text-sm" to="/allocations?tab=in">See all →</Link>}>
           <LegTable legs={d.legs.filter((l) => a.mySiteIds.includes(l.to_site_id) && !['completed', 'cancelled'].includes(l.status))} perspective="in" exportName="coming_to_my_store" empty="Nothing is planned to come to your store." />
         </Card>
       )}
@@ -120,17 +121,17 @@ export default function Dashboard() {
   );
 }
 
-interface TaskProps { icon: string; count: number | null; title: string; text: string; to: string; button: string; tone: 'info' | 'bad' | 'warn' | 'purple' }
+interface TaskProps { icon: IconName; count: number | null; title: string; text: string; to: string; button: string; tone: 'info' | 'bad' | 'warn' | 'purple' }
 function TaskCard({ icon, count, title, text, to, button, tone }: TaskProps) {
   const done = count === 0;
-  const ring = done ? 'border-green-200 bg-green-50/40' : { info: 'border-blue-200', bad: 'border-red-300 bg-red-50/40', warn: 'border-amber-300 bg-amber-50/40', purple: 'border-violet-300 bg-violet-50/40' }[tone];
+  const ring = done ? 'border-slate-200' : { info: 'border-slate-200', bad: 'border-red-200 ring-1 ring-red-100', warn: 'border-amber-200 ring-1 ring-amber-100', purple: 'border-violet-200 ring-1 ring-violet-100' }[tone];
   const go = to.startsWith('#')
     ? <a href={to} className={done ? 'btn-secondary w-full' : 'btn-primary w-full'}>{button}</a>
     : <Link to={to} className={done ? 'btn-secondary w-full' : 'btn-primary w-full'}>{button}</Link>;
   return (
-    <div className={`card flex flex-col border-2 p-4 ${ring}`}>
+    <div className={`card flex flex-col p-5 ${ring}`}>
       <div className="flex items-center gap-3">
-        <span className="text-3xl" aria-hidden>{done ? '✅' : icon}</span>
+        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${done ? 'bg-green-50 text-green-600' : 'bg-brand-50 text-brand-600'}`}><Icon name={done ? 'check' : icon} className="h-6 w-6" /></span>
         <div>
           <div className="text-3xl font-bold tabular-nums leading-none">{count ?? '–'}</div>
           <div className="text-sm font-semibold text-slate-700">{title}</div>
@@ -154,7 +155,7 @@ export function HowItWorks({ compact }: { compact?: boolean }) {
       <ol className="grid gap-3 md:grid-cols-4">
         {steps.map((s) => (
           <li key={s.n} className="flex gap-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 font-bold text-white">{s.n}</span>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-500 font-bold text-white">{s.n}</span>
             <div>
               <div className="font-semibold">{s.title} <span className="text-xs font-normal text-slate-500">· {s.who}</span></div>
               <div className="text-sm text-slate-600">{s.body}</div>
@@ -192,7 +193,7 @@ function SetupChecklist() {
       <ul className="space-y-2">
         {steps.map((x) => (
           <li key={x.label} className="flex flex-wrap items-center gap-3">
-            <span className={`flex h-6 w-6 items-center justify-center rounded-full text-sm ${x.done ? 'bg-green-600 text-white' : 'border-2 border-slate-300'}`}>{x.done ? '✓' : ''}</span>
+            <span className={`flex h-6 w-6 items-center justify-center rounded-full text-sm ${x.done ? 'bg-green-600 text-white' : 'border-2 border-slate-300'}`}>{x.done ? <Icon name="check" className="h-3.5 w-3.5" /> : ''}</span>
             <span className={x.done ? 'text-slate-400 line-through' : 'font-medium'}>{x.label}</span>
             {!x.done && <Link to={x.to} className="btn-secondary btn-sm ml-auto">{x.button} →</Link>}
           </li>
@@ -202,7 +203,7 @@ function SetupChecklist() {
   );
 }
 
-function AgingChart({ rows }: { rows: DispatchItemRow[] }) {
+export function AgingChart({ rows }: { rows: DispatchItemRow[] }) {
   const a = useAuth();
   const [hover, setHover] = useState<{ x: number; y: number; text: string } | null>(null);
   const bySite = useMemo(() => {
@@ -216,7 +217,7 @@ function AgingChart({ rows }: { rows: DispatchItemRow[] }) {
     }
     return [...m.entries()].sort((x, y) => y[1].total - x[1].total);
   }, [rows]);
-  if (!bySite.length) return <div className="p-6 text-center text-sm text-green-700">✔ Nothing is waiting in an Allocation store.</div>;
+  if (!bySite.length) return <div className="p-6 text-center text-sm text-green-700">Nothing is waiting in an Allocation store.</div>;
   const max = Math.max(...bySite.map(([, e]) => e.total));
 
   return (
@@ -258,7 +259,7 @@ function AgingChart({ rows }: { rows: DispatchItemRow[] }) {
   );
 }
 
-function OldestTransfers({ rows }: { rows: DispatchItemRow[] }) {
+export function OldestTransfers({ rows }: { rows: DispatchItemRow[] }) {
   const a = useAuth();
   const stvs = useMemo(() => {
     const m = new Map<string, { id: string; doc: string; date: string; age: number; from: number; to: number; qty: number; lines: number; partial: boolean }>();
@@ -271,7 +272,7 @@ function OldestTransfers({ rows }: { rows: DispatchItemRow[] }) {
     }
     return [...m.values()].sort((x, y) => y.age - x.age).slice(0, 8);
   }, [rows]);
-  if (!stvs.length) return <div className="p-6 text-center text-sm text-green-700">✔ No open transfers.</div>;
+  if (!stvs.length) return <div className="p-6 text-center text-sm text-green-700">No open transfers.</div>;
   return (
     <table className="w-full">
       <thead><tr><th className="th">STV</th><th className="th">Route</th><th className="th text-right">Age</th><th className="th text-right">Open pcs</th></tr></thead>
@@ -289,7 +290,7 @@ function OldestTransfers({ rows }: { rows: DispatchItemRow[] }) {
   );
 }
 
-function Scorecard({ legs, open }: { legs: LegRow[]; open: DispatchItemRow[] }) {
+export function Scorecard({ legs, open }: { legs: LegRow[]; open: DispatchItemRow[] }) {
   const a = useAuth();
   const since = addDays(kwToday(), -30);
   const recent = legs.filter((l) => l.plan_date >= since);
@@ -367,8 +368,8 @@ function StoreTasks({ d }: { d: Data }) {
   }, [d.open, a.mySiteIds]);
   return (
     <div id="to-send" className="grid scroll-mt-20 gap-5 lg:grid-cols-2">
-      <Card title={`📦 Stock you must send (${toSend.length})`} pad={false}>
-        {toSend.length === 0 ? <div className="p-4 text-sm text-green-700">✔ Nothing to send.</div> : (
+      <Card title={`Stock you must send (${toSend.length})`} pad={false}>
+        {toSend.length === 0 ? <div className="p-4 text-sm text-green-700">Nothing to send.</div> : (
           <table className="w-full"><tbody>
             {toSend.map((l) => (
               <tr key={l.leg_id} className="hover:bg-slate-50">
@@ -381,8 +382,8 @@ function StoreTasks({ d }: { d: Data }) {
           </tbody></table>
         )}
       </Card>
-      <Card title={`🚚 Stock waiting for you to receive (${incoming.length})`} pad={false}>
-        {incoming.length === 0 ? <div className="p-4 text-sm text-green-700">✔ Nothing waiting for you.</div> : (
+      <Card title={`Stock waiting for you to receive (${incoming.length})`} pad={false}>
+        {incoming.length === 0 ? <div className="p-4 text-sm text-green-700">Nothing waiting for you.</div> : (
           <table className="w-full"><tbody>
             {incoming.map((s) => (
               <tr key={s.id} className="hover:bg-slate-50">

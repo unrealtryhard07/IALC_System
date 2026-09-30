@@ -116,20 +116,20 @@ export default function Reports() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Reports" subtitle="Excel exports for head office. Every table in the system also has its own ⬇ Excel button."
+      <PageHeader title="Reports" subtitle="Excel exports for head office. Every table in the system also has its own Excel button."
         actions={<div className="flex items-center gap-2 text-sm">
           <label>From <input className="input w-auto" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
           <label>to <input className="input w-auto" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></label>
         </div>} />
       {err && <Alert tone="bad">{err}</Alert>}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card title="📊 Allocation tracker (same as your old Excel)">
+        <Card title="Allocation tracker (same as your old Excel)">
           <p className="mb-3 text-sm text-slate-600">Same layout as the tracker you keep today - received dates, SKUs sent/received, days and SLA per store - but filled automatically, plus a qty-level sheet.</p>
-          <button className="btn-primary" onClick={exportTracker} disabled={!legs || !!busy}>{busy === 'tracker' ? 'Building…' : '⬇ Download tracker'}</button>
+          <button className="btn-primary" onClick={exportTracker} disabled={!legs || !!busy}>{busy === 'tracker' ? 'Building…' : 'Download tracker'}</button>
         </Card>
-        <Card title="⚠️ Problems report">
+        <Card title="Problems report">
           <p className="mb-3 text-sm text-slate-600">Every short / over / wrong / not-received line with the store's reason and HO decision, with KWD value where cost is known.</p>
-          <button className="btn-primary" onClick={exportDiscrepancies} disabled={!!busy}>{busy === 'disc' ? 'Building…' : '⬇ Download discrepancies'}</button>
+          <button className="btn-primary" onClick={exportDiscrepancies} disabled={!!busy}>{busy === 'disc' ? 'Building…' : 'Download problems report'}</button>
         </Card>
         <Card title="Other exports">
           <ul className="space-y-1 text-sm">

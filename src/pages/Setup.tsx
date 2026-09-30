@@ -9,7 +9,7 @@ export default function Setup() {
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#f6f7f9] p-4">
       <form className="card w-full max-w-md space-y-3 p-6"
         onSubmit={async (e) => {
           e.preventDefault();
@@ -27,7 +27,8 @@ export default function Setup() {
           }
         }}>
         <div>
-          <div className="text-xl font-bold text-blue-800">First-time setup</div>
+          <img src="/circle-logo.png" alt="Circle" className="mb-3 h-7 w-auto" />
+          <div className="text-xl font-semibold">First-time setup</div>
           <p className="text-sm text-slate-500">Create the first head-office administrator. This works only once, with the setup code.</p>
         </div>
         <Field label="Setup code"><input className="input font-mono uppercase" value={f.code} onChange={set('code')} required /></Field>

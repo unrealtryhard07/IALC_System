@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { downloadExcel, type XlsColumn } from '../lib/excel';
+import { Icon } from './Icon';
 import { Empty } from './ui';
 
 export interface Column<T> {
@@ -79,7 +80,7 @@ export function DataTable<T>(p: Props<T>) {
         {p.toolbar}
         <div className="ml-auto flex items-center gap-2 text-xs text-slate-500">
           <span>{filtered.length.toLocaleString()} rows</span>
-          {p.exportName && <button className="btn-secondary btn-sm" onClick={doExport} disabled={!filtered.length}>⬇ Excel</button>}
+          {p.exportName && <button className="btn-secondary btn-sm" onClick={doExport} disabled={!filtered.length}><Icon name="download" className="h-3.5 w-3.5" />Excel</button>}
         </div>
       </div>
       <div className="overflow-x-auto">

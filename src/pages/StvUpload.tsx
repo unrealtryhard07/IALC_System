@@ -74,8 +74,8 @@ export default function StvUpload() {
         </div>
         <Card title="Upload both kinds of STV">
           <ul className="space-y-3 text-sm text-slate-700">
-            <li><b>📤 You sent stock</b><br />STV from your store to the other store's Allocation. Upload it the same day.</li>
-            <li><b>📥 You received stock</b><br />STV from your Allocation to your D.S. Upload it as soon as goods arrive - until then the app cannot sell them.</li>
+            <li><b>You sent stock</b><br />STV from your store to the other store's Allocation. Upload it the same day.</li>
+            <li><b>You received stock</b><br />STV from your Allocation to your D.S. Upload it as soon as goods arrive - until then the app cannot sell them.</li>
           </ul>
         </Card>
       </div>
@@ -180,12 +180,12 @@ function JobCard({ job, update, remove }: { job: Job; update: (p: Partial<Job> |
 
   return (
     <Card
-      title={<span className="flex flex-wrap items-center gap-2">📄 {job.file.name}{dir && <Badge tone={DIRECTION[dir].tone}>{DIRECTION[dir].label}</Badge>}{job.stage === 'done' && <Badge tone="good">Saved</Badge>}</span>}
+      title={<span className="flex flex-wrap items-center gap-2">{job.file.name}{dir && <Badge tone={DIRECTION[dir].tone}>{DIRECTION[dir].label}</Badge>}{job.stage === 'done' && <Badge tone="good">Saved</Badge>}</span>}
       actions={job.stage !== 'saving' && <button className="btn-ghost btn-sm" onClick={remove}>{job.stage === 'done' ? 'Close' : 'Discard'}</button>}>
       {job.stage === 'parsing' && <Spinner label="Reading STV…" />}
       {job.stage === 'failed' && <Alert tone="bad">{job.errors.join(' ')}</Alert>}
       {job.stage === 'done' && job.result && (
-        <Alert tone="good" title={`✅ STV ${h.docNo} saved - ${job.result.lines} lines, ${fmtQty(job.result.qty)} pcs.`}>
+        <Alert tone="good" title={`STV ${h.docNo} saved - ${job.result.lines} lines, ${fmtQty(job.result.qty)} pcs.`}>
           <Link className="link" to={`/stvs/${job.result.id}`}>Open STV →</Link>
         </Alert>
       )}
@@ -196,11 +196,11 @@ function JobCard({ job, update, remove }: { job: Job; update: (p: Partial<Job> |
             <div className={`rounded-lg border-2 p-4 ${dir === 'receipt' ? 'border-green-300 bg-green-50' : dir ? 'border-blue-300 bg-blue-50' : 'border-slate-200 bg-slate-50'}`}>
               <div className="text-lg font-semibold">
                 {!pv && 'Checking…'}
-                {pv && dir === 'dispatch' && <>📤 Stock SENT from {siteOf(pv.from)} to {siteOf(pv.to)}</>}
-                {pv && dir === 'receipt' && <>📥 Stock RECEIVED at {siteOf(pv.to)}</>}
-                {pv && dir === 'direct' && <>🔁 Direct transfer {siteOf(pv.from)} → {siteOf(pv.to)}</>}
-                {pv && dir === 'other' && <>❔ Unusual transfer - head office will review it</>}
-                {pv && !dir && <>❔ Store not recognised</>}
+                {pv && dir === 'dispatch' && <>Stock SENT from {siteOf(pv.from)} to {siteOf(pv.to)}</>}
+                {pv && dir === 'receipt' && <>Stock RECEIVED at {siteOf(pv.to)}</>}
+                {pv && dir === 'direct' && <>Direct transfer {siteOf(pv.from)} → {siteOf(pv.to)}</>}
+                {pv && dir === 'other' && <>Unusual transfer - head office will review it</>}
+                {pv && !dir && <>Store not recognised</>}
               </div>
               <div className="text-sm text-slate-700">STV <b>{h.docNo}</b> · {fmtDate(h.date)} · {new Set(job.lines.map((l) => l.itemCode)).size} items · {fmtQty(totalQty)} pcs</div>
               {pv && dir === 'dispatch' && <div className="mt-1 text-xs text-slate-600">It now waits in "{pv.to.name}" until {siteOf(pv.to)} receives it.</div>}
@@ -289,7 +289,7 @@ function JobCard({ job, update, remove }: { job: Job; update: (p: Partial<Job> |
               <div className="rounded-lg border border-slate-200">
                 <div className={`px-4 py-3 ${diffCount ? 'bg-amber-50' : 'bg-green-50'}`}>
                   <div className="font-semibold">
-                    {diffCount === 0 ? `✅ Everything matches ${against} (${counts.ok} items).` : `⚠️ ${diffCount} item${diffCount === 1 ? ' is' : 's are'} different from ${against}.`}
+                    {diffCount === 0 ? `Everything matches ${against} (${counts.ok} items).` : `${diffCount} item${diffCount === 1 ? ' is' : 's are'} different from ${against}.`}
                   </div>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     <Badge tone="good">{counts.ok} match</Badge>

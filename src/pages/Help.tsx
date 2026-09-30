@@ -64,7 +64,7 @@ export default function Help() {
               <p>Export the stock report of each Allocation store from the ERP (Excel/CSV with item code and quantity). Open <b>Stuck stock check → Upload ERP report</b>. Items marked <b>Unknown stuck stock</b> are the ones to act on. Do this weekly.</p>
             </Q>
             <Q q="How do I get my Excel tracker?">
-              <p><b>Excel reports → Download tracker</b>. It has the same columns as the tracker you used before, filled automatically. Every list also has an <b>⬇ Excel</b> button.</p>
+              <p><b>Excel reports → Download tracker</b>. It has the same columns as the tracker you used before, filled automatically. Every list also has an <b>Excel</b> button.</p>
             </Q>
             <Q q="How do I add a store user or reset a password?">
               <p><b>More → Users</b>. Give every person their own username so you can see who uploaded what. Store users only see their own store.</p>

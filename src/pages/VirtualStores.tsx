@@ -40,7 +40,7 @@ export default function VirtualStores() {
     <div className="space-y-4">
       <PageHeader title="Stuck stock check"
         subtitle="Upload the ERP stock report of each Allocation (virtual) store. The system tells you which stock is stuck there, for how long, and why - so it can be received before it expires."
-        actions={canUpload && <button className="btn-primary" onClick={() => setUpload(true)}>⬆️ Upload ERP stock report</button>} />
+        actions={canUpload && <button className="btn-primary" onClick={() => setUpload(true)}>Upload ERP stock report</button>} />
       {err && <Alert tone="bad">{err}</Alert>}
       <Tabs value={loc} onChange={setLoc} tabs={[{ value: 'all', label: 'All allocation stores' }, ...allocs.map((l) => ({ value: l.code, label: `${l.erp_name} (${l.code})` }))]} />
       {!rows ? <Spinner /> : (

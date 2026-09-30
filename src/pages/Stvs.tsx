@@ -34,7 +34,7 @@ export default function Stvs() {
 
   return (
     <div>
-      <PageHeader title={a.isHO ? 'All STVs' : 'My STVs'} subtitle="Every STV that was uploaded. Click one to see its items and the original PDF." actions={(a.isAdmin || a.profile?.role === 'store') && <Link to="/upload" className="btn-primary">⇪ Upload STV</Link>} />
+      <PageHeader title={a.isHO ? 'All STVs' : 'My STVs'} subtitle="Every STV that was uploaded. Click one to see its items and the original PDF." actions={(a.isAdmin || a.profile?.role === 'store') && <Link to="/upload" className="btn-primary">Upload STV</Link>} />
       {err && <Alert tone="bad">{err}</Alert>}
       <Card pad={false}>
         {!rows ? <Spinner /> : (

@@ -80,7 +80,7 @@ export default function Discrepancies() {
             isSelectable={(r) => (tab === 'pending' ? a.isAdmin : a.canActFor(r.responsible_site_id))}
             selected={selected}
             onSelectedChange={setSelected}
-            empty={tab === 'open' ? '✅ Nothing to explain right now.' : 'Nothing here.'}
+            empty={tab === 'open' ? 'Nothing to explain right now.' : 'Nothing here.'}
             toolbar={<>
               <select className="input w-auto" value={kind} onChange={(e) => setKind(e.target.value as DiscKind | '')}>
                 <option value="">All types</option>

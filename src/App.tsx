@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import Setup from './pages/Setup';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Overview = lazy(() => import('./pages/Overview'));
 const StvUpload = lazy(() => import('./pages/StvUpload'));
 const Stvs = lazy(() => import('./pages/Stvs'));
 const StvDetail = lazy(() => import('./pages/StvDetail'));
@@ -62,7 +63,7 @@ export default function App() {
     <Layout>
       <Suspense fallback={<Spinner />}>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={a.isHO ? <Overview /> : <Dashboard />} />
           <Route path="/upload" element={<Guard when={storeOrAdmin}><StvUpload /></Guard>} />
           <Route path="/stvs" element={<Stvs />} />
           <Route path="/stvs/:id" element={<StvDetail />} />

@@ -147,8 +147,8 @@ export default function AllocationDetail() {
           )}
 
           <Card pad={false} title="Item by item" actions={<>
-            {canExplain && <button className="btn-secondary btn-sm" onClick={exportPickList}>⬇ Pick list</button>}
-            <button className="btn-secondary btn-sm" onClick={exportLeg}>⬇ Excel</button>
+            {canExplain && <button className="btn-secondary btn-sm" onClick={exportPickList}>Pick list</button>}
+            <button className="btn-secondary btn-sm" onClick={exportLeg}>Excel</button>
           </>}>
             {!items ? <Spinner /> : (
               <DataTable<LegItemRow>

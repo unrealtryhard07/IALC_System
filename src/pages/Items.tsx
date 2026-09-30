@@ -50,8 +50,8 @@ export default function Items() {
     <div className="space-y-4">
       <PageHeader title="Items masterlist" subtitle="Item codes, names and costs used everywhere in the system. Upload the latest masterlist any time - it updates existing items and adds new ones."
         actions={<>
-          <button className="btn-secondary" onClick={exportAll}>⬇ Export all</button>
-          {a.isAdmin && <button className="btn-primary" onClick={() => setOpen(true)}>⇪ Update masterlist</button>}
+          <button className="btn-secondary" onClick={exportAll}>Export all</button>
+          {a.isAdmin && <button className="btn-primary" onClick={() => setOpen(true)}>Update masterlist</button>}
         </>} />
       {err && <Alert tone="bad">{err}</Alert>}
       <Card pad={false}>
@@ -138,7 +138,7 @@ function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => v
         </>}
         {progress && parsed && (
           <div>
-            <div className="h-2 rounded bg-slate-100"><div className="h-2 rounded bg-blue-700" style={{ width: `${(progress.done / parsed.items.length) * 100}%` }} /></div>
+            <div className="h-2 rounded bg-slate-100"><div className="h-2 rounded bg-brand-500" style={{ width: `${(progress.done / parsed.items.length) * 100}%` }} /></div>
             <div className="mt-1 text-sm">{fmtQty(progress.done)} / {fmtQty(parsed.items.length)} · {fmtQty(progress.inserted)} new · {fmtQty(progress.updated)} updated</div>
           </div>
         )}
