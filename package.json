@@ -1,0 +1,42 @@
+{
+  "name": "ialc-system",
+  "version": "1.0.0",
+  "description": "Internal Allocation Control System - store transfer planning, STV reconciliation and virtual-store monitoring",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unrealtryhard07/IALC_System.git"
+  },
+  "bugs": {
+    "url": "https://github.com/unrealtryhard07/IALC_System/issues"
+  },
+  "homepage": "https://github.com/unrealtryhard07/IALC_System#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
+    "exceljs": "^4.4.0",
+    "pdfjs-dist": "^4.10.38",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.6"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.6.1",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21",
+    "vitest": "^2.1.9"
+  },
+  "private": true,
+  "type": "module"
+}

@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.env.local
+*.log
+test-results
+playwright-report
+# Real company documents used as test fixtures - never commit (public repo)
+tests/fixtures/
+supabase/tests/10_fixtures.sql

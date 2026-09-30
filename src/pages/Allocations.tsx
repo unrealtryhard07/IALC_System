@@ -1,0 +1,78 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { DataTable } from '../components/DataTable';
+import { Alert, Badge, Card, PageHeader, SiteSelect, Spinner } from '../components/ui';
+import { groupLegs, type AllocationSummary } from '../lib/allocations';
+import { useAuth } from '../lib/auth';
+import { addDays, fmtDate, fmtPct, fmtQty, kwToday } from '../lib/format';
+import { LEG_STATUS } from '../lib/labels';
+import { fetchAll, friendlyError, supabase } from '../lib/supabase';
+import type { LegRow, LegStatus } from '../lib/types';
+
+export default function Allocations() {
+  const a = useAuth();
+  const [params, setParams] = useSearchParams();
+  const [legs, setLegs] = useState<LegRow[] | null>(null);
+  const [err, setErr] = useState('');
+  const [from, setFrom] = useState(addDays(kwToday(), -60));
+  const [site, setSite] = useState<number | ''>('');
+  const [kind, setKind] = useState('');
+  const status = (params.get('status') ?? '') as LegStatus | '';
+
+  useEffect(() => {
+    setLegs(null);
+    fetchAll<LegRow>((f, t) => supabase.from('v_legs').select('*').gte('plan_date', from).order('plan_date', { ascending: false }).range(f, t))
+      .then(setLegs).catch((e) => setErr(friendlyError(e)));
+  }, [from]);
+
+  const rows = useMemo(() => {
+    let r = groupLegs(legs ?? []);
+    if (site) r = r.filter((x) => x.from_site_id === site || x.legs.some((l) => l.to_site_id === site));
+    if (kind) r = r.filter((x) => x.kind === kind);
+    if (status) r = r.filter((x) => x.legs.some((l) => l.status === status));
+    return r;
+  }, [legs, site, kind, status]);
+
+  return (
+    <div>
+      <PageHeader title="Allocations" subtitle="Every plan head office sent, per destination store: planned vs dispatched vs received."
+        actions={a.isAdmin && <Link to="/allocations/new" className="btn-primary">+ Upload allocation plan</Link>} />
+      {err && <Alert tone="bad">{err}</Alert>}
+      <Card pad={false}>
+        {!legs ? <Spinner /> : (
+          <DataTable<AllocationSummary>
+            rows={rows}
+            rowKey={(r) => r.allocation_id}
+            exportName={`allocations_${kwToday()}`}
+            searchPlaceholder="Search ref, title…"
+            toolbar={<>
+              <label className="text-xs text-slate-500">Plans since <input type="date" className="input ml-1 w-auto" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
+              <SiteSelect value={site} onChange={setSite} sites={a.sites} />
+              <select className="input w-auto" value={kind} onChange={(e) => setKind(e.target.value)}>
+                <option value="">DC + internal</option><option value="dc">DC allocations</option><option value="internal">Internal allocations</option>
+              </select>
+              <select className="input w-auto" value={status} onChange={(e) => { const p = new URLSearchParams(params); if (e.target.value) p.set('status', e.target.value); else p.delete('status'); setParams(p); }}>
+                <option value="">Any status</option>
+                {Object.entries(LEG_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+              </select>
+            </>}
+            columns={[
+              { key: 'ref', header: 'Ref', value: (r) => r.ref, render: (r) => <Link className="link font-medium" to={`/allocations/${r.allocation_id}`}>{r.ref}</Link> },
+              { key: 'kind', header: 'Type', value: (r) => (r.kind === 'dc' ? 'DC' : 'Internal'), render: (r) => <Badge tone={r.kind === 'dc' ? 'purple' : 'info'}>{r.kind === 'dc' ? 'DC' : 'Internal'}</Badge> },
+              { key: 'from', header: 'From', value: (r) => a.siteName(r.from_site_id) },
+              { key: 'date', header: 'Plan date', value: (r) => r.plan_date, render: (r) => fmtDate(r.plan_date) },
+              { key: 'dest', header: 'Destinations', value: (r) => r.legs.map((l) => `${a.siteName(l.to_site_id)}: ${LEG_STATUS[l.status].label}`).join('; '),
+                render: (r) => <div className="flex flex-wrap gap-1">{r.legs.map((l) => <Badge key={l.leg_id} tone={LEG_STATUS[l.status].tone} title={LEG_STATUS[l.status].label}>{a.siteName(l.to_site_id)}</Badge>)}</div> },
+              { key: 'psku', header: 'Planned SKUs', align: 'right', value: (r) => r.planned_skus },
+              { key: 'pqty', header: 'Planned qty', align: 'right', value: (r) => r.planned_qty, render: (r) => fmtQty(r.planned_qty) },
+              { key: 'dqty', header: 'Dispatched', align: 'right', value: (r) => r.dispatched_qty, render: (r) => <>{fmtQty(r.dispatched_qty)} <span className="text-xs text-slate-400">{fmtPct(r.dispatched_qty, r.planned_qty)}</span></> },
+              { key: 'rqty', header: 'Received', align: 'right', value: (r) => r.received_qty, render: (r) => <>{fmtQty(r.received_qty)} <span className="text-xs text-slate-400">{fmtPct(r.received_qty, r.dispatched_qty)}</span></> },
+              { key: 'issues', header: 'Open issues', align: 'right', value: (r) => r.open_issues, render: (r) => (r.open_issues ? <Badge tone="bad">{r.open_issues}</Badge> : '–') },
+              { key: 'status', header: 'Status', value: (r) => LEG_STATUS[r.status].label, render: (r) => <Badge tone={LEG_STATUS[r.status].tone}>{LEG_STATUS[r.status].label}</Badge> },
+            ]}
+          />
+        )}
+      </Card>
+    </div>
+  );
+}
