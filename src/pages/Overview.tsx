@@ -57,7 +57,7 @@ export default function Overview() {
         <Kpi label="Received vs sent" value={fmtP(m.recv)} sub="pieces received / sent" tone={tone(m.recv, 97, 85)} />
         <Kpi label="Avg days to receive" value={m.avgDays == null ? '–' : m.avgDays.toFixed(1)} sub={`${m.done.length} completed`} tone={m.avgDays == null ? 'neutral' : m.avgDays <= a.receiptSla ? 'good' : m.avgDays <= a.receiptSla * 2 ? 'warn' : 'bad'} />
         <Kpi label="Waiting to be received" value={fmtQty(m.waitQty)} sub={m.waitValue ? fmtKwd(m.waitValue) : 'pieces'} tone={m.waitQty ? 'warn' : 'good'} />
-        <Kpi label="Received late" value={fmtQty(m.lateQty)} sub={`${m.lateStvs} STVs over ${a.receiptSla} day(s)`} tone={m.lateQty ? 'bad' : 'good'} />
+        <Kpi label="Late, not received" value={fmtQty(m.lateQty)} sub={`pcs in ${m.lateStvs} STV(s) older than ${a.receiptSla} day(s)`} tone={m.lateQty ? 'bad' : 'good'} />
         <Kpi label="Open problems" value={m.problems.length} sub={`${m.pending} waiting for your approval`} tone={m.problems.length ? 'warn' : 'good'} />
       </div>
 
