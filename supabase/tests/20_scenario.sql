@@ -278,3 +278,30 @@ select public.request_resolution(jsonb_build_object('kind', 'dispatch_short', 'l
   'item_code', '1202024', 'gap_qty', -4, 'reason_code', 'NEAR_EXPIRY', 'note', 'remaining 12 pcs expire this week'));
 select public.t_assert((select resolution_status from public.v_leg_items li join public.v_legs l using (leg_id) where l.ref = 'AL-00001' and l.to_site_id = 2 and li.item_code = '1202024') = 'pending', 'new explanation pending');
 reset role;
+
+-- ============ STV uploaded before its plan is linked when the plan is created ============
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+select public.submit_stv(jsonb_build_object('doc_no', 'EARLY-1', 'stv_date', '2026-09-20', 'from_code', '303', 'from_name', 'Jahraa D.S',
+  'to_code', '502', 'to_name', 'Hawally Allocation', 'lines', jsonb_build_array(jsonb_build_object('item_code', '5555555', 'qty', 4), jsonb_build_object('item_code', '5555556', 'qty', 2))));
+select public.t_assert((select leg_id from public.stvs where doc_no = 'EARLY-1') is null, 'early STV has no plan yet');
+reset role;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
+set role authenticated;
+do $$
+declare r jsonb;
+begin
+  r := public.create_allocation(jsonb_build_object(
+    'from_site_id', 1, 'plan_date', '2026-09-25',
+    'legs', jsonb_build_array(jsonb_build_object('to_site_id', 4, 'lines', jsonb_build_array(
+      jsonb_build_object('item_code', '5555555', 'qty', 4),
+      jsonb_build_object('item_code', '5555556', 'qty', 3))))));
+  perform public.t_assert((r->>'linked_stvs')::int = 1, 'plan links early STV: ' || r::text);
+end $$;
+select public.t_assert((select l.status from public.v_legs l join public.stvs s on s.leg_id = l.leg_id where s.doc_no = 'EARLY-1') = 'in_transit', 'plan leg now on the way');
+-- the receiving store sees plans coming to it, including not-yet-sent ones
+reset role;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000003', false); -- Salmiya
+set role authenticated;
+select public.t_assert((select count(*) from public.v_legs where to_site_id = 3 and status = 'awaiting_dispatch') >= 1, 'receiver sees incoming plan not sent yet');
+reset role;

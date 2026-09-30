@@ -15,6 +15,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const main: NavItem[] = isStore
     ? [
         { to: '/', label: 'Home - my tasks', icon: '🏠' },
+        { to: '/allocations', label: 'My allocations', icon: '📋', hint: 'coming to me & sending out' },
         { to: '/upload', label: 'Upload STV', icon: '⬆️', hint: 'sent or received stock' },
         { to: '/discrepancies', label: 'Problems to explain', icon: '⚠️' },
         { to: '/stvs', label: 'My STVs', icon: '📄' },
@@ -22,7 +23,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       ]
     : [
         { to: '/', label: 'Home', icon: '🏠' },
-        { to: '/allocations', label: 'Transfer plans', icon: '📋' },
+        { to: '/allocations', label: 'Allocation tracker', icon: '📋' },
         { to: '/in-transit', label: 'Waiting to be received', icon: '🚚' },
         { to: '/discrepancies', label: 'Problems & approvals', icon: '⚠️' },
         { to: '/virtual-stores', label: 'Stuck stock check', icon: '🔍' },

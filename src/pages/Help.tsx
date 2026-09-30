@@ -35,6 +35,9 @@ export default function Help() {
             <p>3. Press <b>Save</b>. Anything missing becomes a problem to explain.</p>
             <p className="rounded bg-amber-50 p-2 text-amber-900">Do this the same day. Stock that is not received stays invisible in the app and can expire.</p>
           </Q>
+          <Q q="How do I see allocations coming to my store?">
+            <p>Open <b>My allocations → Coming to me</b> (also on your home page). Every allocation planned for your store is listed from the moment head office plans it - even before the other store sends it - with a progress bar: <b>Planned → Sent → Received → Closed</b> and the next step.</p>
+          </Q>
           <Q q="What is a 'problem to explain'?">
             <p>Any difference: sent less, not sent, sent extra, wrong item, or not received. Select the lines, choose a reason (no stock, damaged, expired…), add a note if needed, and send. Head office approves or rejects. If rejected you will see why - explain again.</p>
           </Q>
@@ -52,7 +55,7 @@ export default function Help() {
         <Card title="For head office">
           <div className="space-y-2">
             <Q q="How do I send a transfer plan to the stores?">
-              <p><b>Transfer plans → Upload a transfer plan</b>. Drop the same Excel you use today (the "From Jahra DS" format or the DC format). Check the sending store and the totals per store, then press <b>Create</b>. Stores see it on their home page.</p>
+              <p><b>Allocation tracker → Upload a transfer plan</b>. Drop the same Excel you use today (the "From Jahra DS" format or the DC format). Check the sending store and the totals per store, then press <b>Create</b>. Stores see it on their home page.</p>
             </Q>
             <Q q="What should I check every day?">
               <p>Your <b>Home</b> page: explanations to approve, late receiving, plans not sent. Every card has one button that takes you to the list.</p>

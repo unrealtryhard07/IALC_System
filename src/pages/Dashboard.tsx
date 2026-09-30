@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { LegTable } from '../components/LegProgress';
 import { Alert, Badge, Card, Spinner } from '../components/ui';
 import { useAuth } from '../lib/auth';
 import { AGE_BUCKETS, ageBucket, addDays, daysBetween, fmtDate, fmtKwd, fmtPct, fmtQty, kwToday, sum } from '../lib/format';
@@ -37,7 +38,11 @@ export default function Dashboard() {
     // Not-received-at-all lines are the receiving task (card above), not a separate problem
     const isProblem = (x: DiscrepancyRow) => x.kind !== 'receipt_short' || Number(x.actual_qty) > 0;
     const toSend = d.legs.filter((l) => l.status === 'awaiting_dispatch' && (a.isHO || a.mySiteIds.includes(l.from_site_id)));
+    const incoming = d.legs.filter((l) => a.mySiteIds.includes(l.to_site_id) && !['completed', 'cancelled'].includes(l.status));
     return {
+      incoming: incoming.length,
+      incomingNotSent: incoming.filter((l) => l.status === 'awaiting_dispatch').length,
+      incomingOnWay: incoming.filter((l) => l.status === 'in_transit' || l.status === 'partially_received').length,
       toSend: toSend.length,
       toSendLate: toSend.filter((l) => (l.days_waiting_dispatch ?? 0) > a.dispatchSla).length,
       toReceive: stvCount(toReceive),
@@ -62,6 +67,7 @@ export default function Dashboard() {
 
   const tasks: TaskProps[] = isStore
     ? [
+        { icon: '📥', count: k.incoming, title: k.incoming === 1 ? 'allocation coming to you' : 'allocations coming to you', text: `${k.incomingNotSent} not sent yet by the sender, ${k.incomingOnWay} on the way to you. See each one and where it is.`, to: '/allocations?tab=in', button: 'Track them', tone: k.incomingOnWay ? 'warn' : 'info' },
         { icon: '📦', count: k.toSend, title: k.toSend === 1 ? 'plan to send' : 'plans to send', text: k.toSendLate ? `${k.toSendLate} are late. Pick the items, make the STV in the ERP, then upload it here.` : 'Pick the items, make the STV in the ERP, then upload it here.', to: '#to-send', button: 'See what to send', tone: k.toSendLate ? 'bad' : 'info' },
         { icon: '🚚', count: k.toReceive, title: k.toReceive === 1 ? 'transfer to receive' : 'transfers to receive', text: k.toReceive ? `${fmtQty(k.toReceiveQty)} pcs are waiting for you (oldest ${k.oldest} days). Receive them in the ERP (Allocation → D.S) and upload that STV - until then the app cannot sell them.` : 'Nothing is waiting for you.', to: '/upload', button: 'Upload receiving STV', tone: k.oldest > a.receiptSla ? 'bad' : 'info' },
         { icon: '⚠️', count: k.explain, title: k.explain === 1 ? 'problem to explain' : 'problems to explain', text: k.rejected ? `${k.rejected} reason(s) were rejected by head office - please explain again.` : 'Items sent short, not sent, or received short. Choose a reason for each.', to: '/discrepancies', button: 'Explain now', tone: k.explain ? 'warn' : 'info' },
@@ -89,11 +95,17 @@ export default function Dashboard() {
       {a.isAdmin && <SetupChecklist />}
 
       {allClear && <Alert tone="good" title="All done - nothing needs attention right now 🎉" />}
-      <div className={`grid gap-4 sm:grid-cols-2 ${isStore ? 'lg:grid-cols-3' : 'lg:grid-cols-3 xl:grid-cols-5'}`}>
+      <div className={`grid gap-4 sm:grid-cols-2 ${isStore ? 'lg:grid-cols-4' : 'lg:grid-cols-3 xl:grid-cols-5'}`}>
         {tasks.map((t) => <TaskCard key={t.title} {...t} />)}
       </div>
 
       <HowItWorks compact />
+
+      {isStore && (
+        <Card title="📥 Allocations coming to your store" pad={false} actions={<Link className="link text-sm" to="/allocations?tab=in">See all →</Link>}>
+          <LegTable legs={d.legs.filter((l) => a.mySiteIds.includes(l.to_site_id) && !['completed', 'cancelled'].includes(l.status))} perspective="in" exportName="coming_to_my_store" empty="Nothing is planned to come to your store." />
+        </Card>
+      )}
 
       {isStore ? <StoreTasks d={d} /> : (
         <>

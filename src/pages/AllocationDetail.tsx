@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { DataTable } from '../components/DataTable';
+import { nextStep, Progress } from '../components/LegProgress';
 import { DecideModal, ExplainModal, ResolutionBadge, type ResolveTarget } from '../components/Resolution';
 import { Alert, Badge, Card, Field, Modal, PageHeader, Spinner, Stat, Tabs } from '../components/ui';
 import { useAuth } from '../lib/auth';
@@ -106,6 +107,15 @@ export default function AllocationDetail() {
 
       {leg && (
         <>
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div className="text-lg font-semibold">{a.siteName(alloc.from_site_id)} → {a.siteName(leg.to_site_id)}</div>
+                {(() => { const p = a.mySiteIds.includes(leg.to_site_id) && !a.isHO ? 'in' : a.mySiteIds.includes(alloc.from_site_id) && !a.isHO ? 'out' : 'all'; const n = nextStep(leg, p, a.siteName); return <div className={`mt-1 text-sm ${n.urgent ? 'font-semibold text-red-700' : 'text-slate-600'}`}>Next step: {n.text}</div>; })()}
+              </div>
+              <Progress leg={leg} />
+            </div>
+          </Card>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             <Stat label="Planned" value={fmtQty(leg.planned_qty)} sub={`${leg.planned_skus} SKUs`} />
             <Stat label="Sent" value={fmtQty(leg.dispatched_qty)} sub={`${leg.dispatched_skus} SKUs · ${fmtPct(leg.dispatched_qty, leg.planned_qty)}`} tone={leg.dispatched_qty ? 'info' : 'neutral'} />
@@ -144,7 +154,7 @@ export default function AllocationDetail() {
               <DataTable<LegItemRow>
                 rows={items}
                 rowKey={(r) => r.item_code}
-                selectable={alloc.status === 'active'}
+                selectable={alloc.status === 'active' && canExplain}
                 isSelectable={(r) => ['short', 'not_sent', 'over', 'unplanned'].includes(r.dispatch_status) && r.resolution_status !== 'approved'}
                 selected={selected}
                 onSelectedChange={setSelected}
