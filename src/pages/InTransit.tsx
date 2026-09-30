@@ -44,30 +44,30 @@ export default function InTransit() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="In transit - stock sitting in Allocation stores" subtitle={`Dispatched but not yet moved into the receiving D.S. Anything older than ${a.receiptSla} day(s) is overdue: the receiving store must post Allocation → D.S and upload it.`} />
+      <PageHeader title="Waiting to be received" subtitle={`Stock that was sent but the receiving store has not received yet. It cannot be sold until they do. Red = more than ${a.receiptSla} day(s) old - chase that store.`} />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat label="Open pieces" value={fmtQty(sum(filtered, (r) => r.open_qty))} tone="info" />
-        <Stat label="Open lines / STVs" value={`${filtered.length} / ${groups.length}`} />
-        <Stat label="Overdue pieces" value={fmtQty(sum(filtered.filter((r) => r.age_days > a.receiptSla), (r) => r.open_qty))} tone="bad" />
+        <Stat label="Pieces waiting" value={fmtQty(sum(filtered, (r) => r.open_qty))} tone="info" />
+        <Stat label="Items / STVs" value={`${filtered.length} / ${groups.length}`} />
+        <Stat label="Late pieces" value={fmtQty(sum(filtered.filter((r) => r.age_days > a.receiptSla), (r) => r.open_qty))} tone="bad" />
         <Stat label="Value (where cost known)" value={fmtKwd(sum(filtered, (r) => r.open_qty * (r.cost ?? 0)))} />
       </div>
-      <Tabs value={view} onChange={setView} tabs={[{ value: 'stv', label: 'By STV' }, { value: 'item', label: 'By item' }]} />
+      <Tabs value={view} onChange={setView} tabs={[{ value: 'stv', label: 'Per STV' }, { value: 'item', label: 'Per item' }]} />
       <Card pad={false}>
         {view === 'stv' ? (
           <DataTable<StvGroup>
             rows={groups} rowKey={(r) => r.stv_id} exportName={`in_transit_by_stv_${kwToday()}`} initialSort={{ key: 'age', dir: -1 }}
             toolbar={<Filters />}
             columns={[
-              { key: 'doc', header: 'Dispatch STV', value: (r) => r.doc_no, render: (r) => <Link className="link font-mono" to={`/stvs/${r.stv_id}`}>{r.doc_no}</Link> },
-              { key: 'date', header: 'Dispatched', value: (r) => r.stv_date, render: (r) => fmtDate(r.stv_date) },
-              { key: 'age', header: 'Age', align: 'right', value: (r) => r.age, render: (r) => ageBadge(r.age) },
+              { key: 'doc', header: 'STV', value: (r) => r.doc_no, render: (r) => <Link className="link font-mono" to={`/stvs/${r.stv_id}`}>{r.doc_no}</Link> },
+              { key: 'date', header: 'Sent on', value: (r) => r.stv_date, render: (r) => fmtDate(r.stv_date) },
+              { key: 'age', header: 'Days waiting', align: 'right', value: (r) => r.age, render: (r) => ageBadge(r.age) },
               { key: 'from', header: 'From', value: (r) => a.siteName(r.from) },
-              { key: 'to', header: 'Waiting for', value: (r) => a.siteName(r.to) },
+              { key: 'to', header: 'Must be received by', value: (r) => a.siteName(r.to) },
               { key: 'where', header: 'Sitting in', value: (r) => a.locationLabel(r.to_code) },
-              { key: 'lines', header: 'Open lines', align: 'right', value: (r) => r.lines },
-              { key: 'sent', header: 'Dispatched', align: 'right', value: (r) => r.sent, render: (r) => fmtQty(r.sent) },
+              { key: 'lines', header: 'Items', align: 'right', value: (r) => r.lines },
+              { key: 'sent', header: 'Sent', align: 'right', value: (r) => r.sent, render: (r) => fmtQty(r.sent) },
               { key: 'recv', header: 'Received', align: 'right', value: (r) => r.received, render: (r) => fmtQty(r.received) },
-              { key: 'open', header: 'Open', align: 'right', value: (r) => r.open, render: (r) => <b>{fmtQty(r.open)}</b> },
+              { key: 'open', header: 'Waiting', align: 'right', value: (r) => r.open, render: (r) => <b>{fmtQty(r.open)}</b> },
               { key: 'val', header: 'Value KWD', align: 'right', value: (r) => Number(r.value.toFixed(3)), render: (r) => (r.value ? r.value.toFixed(3) : '–') },
             ]}
           />
@@ -77,14 +77,14 @@ export default function InTransit() {
             toolbar={<Filters />}
             columns={[
               { key: 'doc', header: 'STV', value: (r) => r.doc_no, render: (r) => <Link className="link font-mono" to={`/stvs/${r.stv_id}`}>{r.doc_no}</Link> },
-              { key: 'age', header: 'Age', align: 'right', value: (r) => r.age_days, render: (r) => ageBadge(r.age_days) },
+              { key: 'age', header: 'Days waiting', align: 'right', value: (r) => r.age_days, render: (r) => ageBadge(r.age_days) },
               { key: 'from', header: 'From', value: (r) => a.siteName(r.from_site_id) },
               { key: 'to', header: 'To', value: (r) => a.siteName(r.to_site_id) },
               { key: 'code', header: 'Item', value: (r) => r.item_code, className: 'font-mono text-xs' },
               { key: 'name', header: 'Name', value: (r) => r.item_name, className: 'min-w-[220px]' },
-              { key: 'sent', header: 'Dispatched', align: 'right', value: (r) => r.dispatched_qty, render: (r) => fmtQty(r.dispatched_qty) },
+              { key: 'sent', header: 'Sent', align: 'right', value: (r) => r.dispatched_qty, render: (r) => fmtQty(r.dispatched_qty) },
               { key: 'recv', header: 'Received', align: 'right', value: (r) => r.received_qty, render: (r) => fmtQty(r.received_qty) },
-              { key: 'open', header: 'Open', align: 'right', value: (r) => r.open_qty, render: (r) => <b>{fmtQty(r.open_qty)}</b> },
+              { key: 'open', header: 'Waiting', align: 'right', value: (r) => r.open_qty, render: (r) => <b>{fmtQty(r.open_qty)}</b> },
               { key: 'val', header: 'Value KWD', align: 'right', value: (r) => (r.cost ? Number((r.open_qty * r.cost).toFixed(3)) : null) },
               { key: 'res', header: 'Reason', value: (r) => r.resolution_status ?? '', render: (r) => (r.resolution_status === 'pending' ? <Badge tone="warn">Explained, awaiting HO</Badge> : r.resolution_status === 'rejected' ? <Badge tone="bad">Rejected</Badge> : null) },
             ]}

@@ -21,6 +21,7 @@ export default function Discrepancies() {
   const [kind, setKind] = useState<DiscKind | ''>('');
   const [site, setSite] = useState<number | ''>('');
   const [mineOnly, setMineOnly] = useState(!a.isHO);
+  const [showNotReceived, setShowNotReceived] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [explain, setExplain] = useState<{ targets: ResolveTarget[]; mode: 'explain' | 'close' } | null>(null);
   const [decide, setDecide] = useState<{ ids: string[]; approve: boolean } | null>(null);
@@ -49,8 +50,11 @@ export default function Discrepancies() {
   }, [tab]);
   useEffect(() => { load(); }, [load]);
 
+  // transfers not received at all belong to 'Waiting to be received'; hidden here unless asked
+  const isWaiting = (r: DiscrepancyRow) => r.kind === 'receipt_short' && Number(r.actual_qty) === 0;
+  const waitingCount = (rows ?? []).filter(isWaiting).length;
   const filtered = useMemo(() => (rows ?? []).filter((r) =>
-    (!kind || r.kind === kind) && (!site || r.responsible_site_id === site) && (!mineOnly || a.mySiteIds.includes(r.responsible_site_id))), [rows, kind, site, mineOnly, a.mySiteIds]);
+    (showNotReceived || kind === 'receipt_short' || !isWaiting(r)) && (!kind || r.kind === kind) && (!site || r.responsible_site_id === site) && (!mineOnly || a.mySiteIds.includes(r.responsible_site_id))), [rows, kind, site, mineOnly, a.mySiteIds, showNotReceived]);
   const sel = filtered.filter((r) => selected.has(keyOf(r)));
   const toTarget = (r: DiscrepancyRow): ResolveTarget => ({ kind: r.kind, leg_id: r.leg_id, stv_id: r.stv_id, item_code: r.item_code, gap_qty: r.gap_qty, label: `${r.item_code === '*' ? `STV ${r.doc_no}` : `${r.item_code} ${r.item_name ?? ''}`} (${DISC_KIND[r.kind].short})` });
   const refresh = () => { setExplain(null); setDecide(null); load(); };
@@ -58,11 +62,11 @@ export default function Discrepancies() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Discrepancies" subtitle="Every difference between plan, dispatch and receipt. The responsible store gives a reason; head office approves or rejects." />
+      <PageHeader title={a.isHO ? 'Problems & approvals' : 'Problems to explain'} subtitle={a.isHO ? 'Differences between what was planned, sent and received. The store gives a reason; you approve or reject.' : 'Tick the items, press Explain, choose a reason. Head office will approve it.'} />
       <Tabs value={tab} onChange={(v) => setParams({ tab: v })} tabs={[
-        { value: 'open', label: 'Needs a reason' },
-        { value: 'pending', label: 'Awaiting HO approval' },
-        { value: 'closed', label: 'Closed (last 90 days)' },
+        { value: 'open', label: '1. Needs a reason' },
+        { value: 'pending', label: '2. Waiting for head office' },
+        { value: 'closed', label: '3. Closed' },
       ]} />
       {err && <Alert tone="bad">{err}</Alert>}
       {tab === 'pending' && !a.isAdmin && <Alert tone="info">These explanations are waiting for head office.</Alert>}
@@ -76,7 +80,7 @@ export default function Discrepancies() {
             isSelectable={(r) => (tab === 'pending' ? a.isAdmin : a.canActFor(r.responsible_site_id))}
             selected={selected}
             onSelectedChange={setSelected}
-            empty={tab === 'open' ? '✔ Nothing needs a reason right now.' : 'Nothing here.'}
+            empty={tab === 'open' ? '✅ Nothing to explain right now.' : 'Nothing here.'}
             toolbar={<>
               <select className="input w-auto" value={kind} onChange={(e) => setKind(e.target.value as DiscKind | '')}>
                 <option value="">All types</option>
@@ -84,6 +88,11 @@ export default function Discrepancies() {
               </select>
               {a.isHO ? <SiteSelect value={site} onChange={setSite} sites={a.sites} allLabel="Any responsible store" /> : (
                 <label className="flex items-center gap-1 text-xs text-slate-600"><input type="checkbox" checked={mineOnly} onChange={(e) => setMineOnly(e.target.checked)} /> only lines my store must explain</label>
+              )}
+              {waitingCount > 0 && tab === 'open' && (
+                <label className="flex items-center gap-1 text-xs text-slate-600" title="Transfers nobody has received yet. The store should receive them (upload the receiving STV) rather than explain.">
+                  <input type="checkbox" checked={showNotReceived} onChange={(e) => setShowNotReceived(e.target.checked)} /> also show {waitingCount} items not received at all
+                </label>
               )}
               {sel.length > 0 && tab === 'open' && <>
                 {selKinds.size > 1 && <span className="text-xs text-amber-700">Select one type at a time to explain</span>}
@@ -96,17 +105,17 @@ export default function Discrepancies() {
               </>}
             </>}
             columns={[
-              { key: 'kind', header: 'Type', value: (r) => DISC_KIND[r.kind].label, render: (r) => <Badge tone={DISC_KIND[r.kind].who === 'sender' ? 'warn' : 'bad'} title={DISC_KIND[r.kind].help}>{DISC_KIND[r.kind].short}</Badge> },
+              { key: 'kind', header: 'Problem', value: (r) => DISC_KIND[r.kind].label, render: (r) => <Badge tone={DISC_KIND[r.kind].who === 'sender' ? 'warn' : 'bad'} title={DISC_KIND[r.kind].help}>{DISC_KIND[r.kind].short}</Badge> },
               { key: 'date', header: 'Date', value: (r) => r.event_date, render: (r) => fmtDate(r.event_date) },
-              { key: 'route', header: 'Route', value: (r) => `${a.siteName(r.from_site_id)} → ${a.siteName(r.to_site_id)}` },
-              { key: 'who', header: 'Must explain', value: (r) => a.siteName(r.responsible_site_id), render: (r) => <b>{a.siteName(r.responsible_site_id)}</b> },
+              { key: 'route', header: 'From → To', value: (r) => `${a.siteName(r.from_site_id)} → ${a.siteName(r.to_site_id)}` },
+              { key: 'who', header: 'Who explains', value: (r) => a.siteName(r.responsible_site_id), render: (r) => <b>{a.siteName(r.responsible_site_id)}</b> },
               { key: 'ref', header: 'Plan / STV', value: (r) => [r.ref, r.doc_no].filter(Boolean).join(' / '),
                 render: (r) => <span className="text-sm">{r.allocation_id ? <Link className="link" to={`/allocations/${r.allocation_id}${r.leg_id ? `?leg=${r.leg_id}` : ''}`}>{r.ref}</Link> : null}{r.ref && r.stv_id ? ' / ' : ''}{r.stv_id ? <Link className="link font-mono" to={`/stvs/${r.stv_id}`}>{r.doc_no}</Link> : null}</span> },
               { key: 'code', header: 'Item', value: (r) => r.item_code, className: 'font-mono text-xs' },
               { key: 'name', header: 'Name', value: (r) => r.item_name, className: 'min-w-[220px]' },
               { key: 'exp', header: 'Expected', align: 'right', value: (r) => r.planned_qty, render: (r) => fmtQty(r.planned_qty) },
               { key: 'act', header: 'Actual', align: 'right', value: (r) => r.actual_qty, render: (r) => fmtQty(r.actual_qty) },
-              { key: 'gap', header: 'Gap', align: 'right', value: (r) => r.gap_qty, render: (r) => <b className={Number(r.gap_qty) < 0 ? 'text-red-700' : 'text-violet-700'}>{Number(r.gap_qty) > 0 ? '+' : ''}{fmtQty(r.gap_qty)}</b> },
+              { key: 'gap', header: 'Difference', align: 'right', value: (r) => r.gap_qty, render: (r) => <b className={Number(r.gap_qty) < 0 ? 'text-red-700' : 'text-violet-700'}>{Number(r.gap_qty) > 0 ? '+' : ''}{fmtQty(r.gap_qty)}</b> },
               { key: 'val', header: 'Value KWD', align: 'right', value: (r) => (r.cost && r.gap_qty ? Number((Math.abs(r.gap_qty) * r.cost).toFixed(3)) : null) },
               { key: 'res', header: 'Reason', value: (r) => [r.resolution_status, a.reasons.find((x) => x.code === r.reason_code)?.label, r.resolution_note].filter(Boolean).join(' - '),
                 render: (r) => <div><ResolutionBadge status={r.resolution_status} reason={r.reason_code} note={r.resolution_note} />{r.resolution_note && <div className="mt-0.5 max-w-xs text-xs text-slate-500">{r.resolution_note}</div>}{r.resolution_id && hoNotes[r.resolution_id] && <div className="mt-0.5 max-w-xs text-xs text-red-700">HO: {hoNotes[r.resolution_id]}</div>}</div> },

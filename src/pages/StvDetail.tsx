@@ -83,18 +83,18 @@ export default function StvDetail() {
         <Stat label="Lines" value={stv.line_count} />
         <Stat label="Quantity" value={fmtQty(stv.total_qty)} />
         {(stv.direction === 'dispatch' || stv.direction === 'direct') && <>
-          <Stat label="Still in allocation store" value={fmtQty(openQty)} tone={openQty ? 'warn' : 'good'} sub={disp.some((r) => r.cost) ? fmtKwd(sum(disp, (r) => r.open_qty * (r.cost ?? 0))) : undefined} />
-          <Stat label="Plan" value={plan ? <Link className="link" to={`/allocations/${plan.allocation_id}`}>{plan.ref}</Link> : 'Unplanned'} tone={plan ? 'good' : 'purple'} />
+          <Stat label="Waiting to be received" value={fmtQty(openQty)} tone={openQty ? 'warn' : 'good'} sub={disp.some((r) => r.cost) ? fmtKwd(sum(disp, (r) => r.open_qty * (r.cost ?? 0))) : undefined} />
+          <Stat label="Plan" value={plan ? <Link className="link" to={`/allocations/${plan.allocation_id}`}>{plan.ref}</Link> : 'No plan'} tone={plan ? 'good' : 'purple'} />
         </>}
         {stv.direction === 'receipt' && <>
-          <Stat label="Matched to dispatches" value={fmtQty(sum(matches, (m) => m.qty))} tone="good" />
-          <Stat label="Without dispatch" value={fmtQty(sum(unmatched, (u) => u.unmatched_qty))} tone={unmatched.length ? 'purple' : 'neutral'} />
+          <Stat label="Matched to sent STVs" value={fmtQty(sum(matches, (m) => m.qty))} tone="good" />
+          <Stat label="Nobody sent this" value={fmtQty(sum(unmatched, (u) => u.unmatched_qty))} tone={unmatched.length ? 'purple' : 'neutral'} />
         </>}
       </div>
       <div className="text-xs text-slate-500">Uploaded {fmtDateTime(stv.uploaded_at)} · source {stv.source}{stv.file_name && <> · {stv.file_name}</>}</div>
 
       {(stv.direction === 'dispatch' || stv.direction === 'direct') && (
-        <Card title="Receipt status per item" pad={false}>
+        <Card title="Has each item been received?" pad={false}>
           <DataTable<DispatchItemRow>
             rows={disp}
             rowKey={(r) => r.item_code}
@@ -110,10 +110,10 @@ export default function StvDetail() {
             columns={[
               { key: 'code', header: 'Item', value: (r) => r.item_code, className: 'font-mono text-xs' },
               { key: 'name', header: 'Name', value: (r) => r.item_name, className: 'min-w-[220px]' },
-              { key: 'sent', header: 'Dispatched', align: 'right', value: (r) => r.dispatched_qty, render: (r) => fmtQty(r.dispatched_qty) },
+              { key: 'sent', header: 'Sent', align: 'right', value: (r) => r.dispatched_qty, render: (r) => fmtQty(r.dispatched_qty) },
               { key: 'recv', header: 'Received', align: 'right', value: (r) => r.received_qty, render: (r) => fmtQty(r.received_qty) },
-              { key: 'open', header: 'Open', align: 'right', value: (r) => r.open_qty, render: (r) => (r.open_qty ? <b className="text-amber-700">{fmtQty(r.open_qty)}</b> : '–') },
-              { key: 'rdocs', header: 'Receipt STV(s)', value: (r) => r.receipt_docs, render: (r) => <span className="font-mono text-xs">{r.receipt_docs ?? '–'}</span> },
+              { key: 'open', header: 'Waiting', align: 'right', value: (r) => r.open_qty, render: (r) => (r.open_qty ? <b className="text-amber-700">{fmtQty(r.open_qty)}</b> : '–') },
+              { key: 'rdocs', header: 'Received on STV', value: (r) => r.receipt_docs, render: (r) => <span className="font-mono text-xs">{r.receipt_docs ?? '–'}</span> },
               { key: 'rdate', header: 'Received on', value: (r) => r.last_receipt_date, render: (r) => fmtDate(r.last_receipt_date) },
               { key: 'st', header: 'Status', value: (r) => (r.raw_open_qty === 0 ? 'received' : r.resolution_status ?? 'open'),
                 render: (r) => (r.raw_open_qty === 0 ? <Badge tone="good">Received</Badge> : r.resolution_status ? <ResolutionBadge status={r.resolution_status} reason={r.reason_code} note={r.resolution_note} /> : <Badge tone={r.age_days > a.receiptSla ? 'bad' : 'info'}>{r.received_qty > 0 ? 'Partly received' : 'In transit'} · {r.age_days} d</Badge>) },
@@ -124,7 +124,7 @@ export default function StvDetail() {
 
       {stv.direction === 'receipt' && (
         <>
-          <Card title="Matched to these dispatches" pad={false}>
+          <Card title="This receives these sent STVs" pad={false}>
             <table className="w-full">
               <thead><tr><th className="th">Dispatch STV</th><th className="th text-right">Items</th><th className="th text-right">Qty received</th></tr></thead>
               <tbody>{Object.entries(matches.reduce<Record<string, { items: Set<string>; qty: number }>>((acc, m) => {
@@ -143,7 +143,7 @@ export default function StvDetail() {
             {matches.length === 0 && <div className="p-4 text-sm text-slate-500">Nothing matched yet. If the sender uploads its dispatch STV later, it will match automatically.</div>}
           </Card>
           {unmatched.length > 0 && (
-            <Card title="Received without a matching dispatch" pad={false}>
+            <Card title="Received, but nobody sent it in the system" pad={false}>
               <DataTable<Unmatched>
                 rows={unmatched}
                 rowKey={(r) => r.item_code}
@@ -159,7 +159,7 @@ export default function StvDetail() {
                   { key: 'code', header: 'Item', value: (r) => r.item_code, className: 'font-mono text-xs' },
                   { key: 'name', header: 'Name', value: (r) => r.item_name, className: 'min-w-[220px]' },
                   { key: 'q', header: 'On receipt', align: 'right', value: (r) => r.qty, render: (r) => fmtQty(r.qty) },
-                  { key: 'u', header: 'No dispatch for', align: 'right', value: (r) => r.unmatched_qty, render: (r) => <b className="text-violet-700">{fmtQty(r.unmatched_qty)}</b> },
+                  { key: 'u', header: 'Not sent by anyone', align: 'right', value: (r) => r.unmatched_qty, render: (r) => <b className="text-violet-700">{fmtQty(r.unmatched_qty)}</b> },
                   { key: 'r', header: 'Reason', value: (r) => r.resolution_status, render: (r) => <ResolutionBadge status={r.resolution_status} reason={r.reason_code} note={r.resolution_note} /> },
                 ]}
               />
@@ -211,7 +211,7 @@ function LinkPlanModal({ stv, onClose, onDone }: { stv: StvRow; onClose: () => v
       .eq('allocation_status', 'active').order('plan_date', { ascending: false }).limit(30).then(({ data }) => setLegs(data ?? []));
   }, [stv]);
   return (
-    <Modal open title="Link STV to an allocation plan" onClose={onClose} footer={<>
+    <Modal open title="Link this STV to a plan" onClose={onClose} footer={<>
       <button className="btn-secondary" onClick={onClose}>Cancel</button>
       <button className="btn-primary" onClick={() => rpc('set_stv_leg', { p_stv: stv.id, p_leg: leg || null }).then(onDone).catch((e) => setErr(friendlyError(e)))}>Save</button>
     </>}>
