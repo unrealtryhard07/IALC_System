@@ -139,13 +139,14 @@ function JobCard({ job, update, remove }: { job: Job; update: (p: Partial<Job> |
       const rows: CompareRow[] = [];
       expected.forEach((e, code) => {
         const act = stvQty.get(code)?.q ?? 0;
-        rows.push({ item_code: code, name: e.n || stvQty.get(code)?.n || '', expected: e.q, actual: act, diff: act - e.q, status: act === 0 ? missingLabel : act < e.q ? 'short' : act > e.q ? 'over' : 'ok' });
+        rows.push({ item_code: code, name: stvQty.get(code)?.n || e.n || '', expected: e.q, actual: act, diff: act - e.q, status: act === 0 ? missingLabel : act < e.q ? 'short' : act > e.q ? 'over' : 'ok' });
       });
       stvQty.forEach((s, code) => { if (!expected.has(code)) rows.push({ item_code: code, name: s.n, expected: null, actual: s.q, diff: s.q, status: 'extra' }); });
       return rows.sort((x, y) => (x.status === 'ok' ? 1 : 0) - (y.status === 'ok' ? 1 : 0) || x.item_code.localeCompare(y.item_code));
     };
     if ((pv.direction === 'dispatch' || pv.direction === 'direct') && job.legId) {
-      supabase.from('allocation_lines').select('item_code, item_name, planned_qty').eq('leg_id', job.legId).then(({ data }) => {
+      // v_leg_items names come from the items masterlist first (a plan file's name column can be wrong)
+      supabase.from('v_leg_items').select('item_code, item_name, planned_qty').eq('leg_id', job.legId).not('planned_qty', 'is', null).then(({ data }) => {
         const m = new Map<string, { q: number; n: string }>();
         (data ?? []).forEach((r: { item_code: string; item_name: string | null; planned_qty: number }) => m.set(r.item_code, { q: Number(r.planned_qty), n: r.item_name ?? '' }));
         setCompare(build(m, 'missing'));

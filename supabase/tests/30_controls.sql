@@ -171,3 +171,15 @@ select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a
 set role authenticated;
 select public.t_assert(exists (select 1 from jsonb_array_elements(public.my_notifications()) x where x->>'key' = 'unexplained'), 'HO bell: unexplained problems');
 reset role;
+
+-- plan lines take the item name from the masterlist, not from the plan file
+insert into public.items (item_code, name) values ('NAME-1', 'Jojo Jelly 80g') on conflict (item_code) do update set name = excluded.name;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
+set role authenticated;
+select public.create_allocation(jsonb_build_object('from_site_id', 5, 'plan_date', public.kw_today(), 'title', 'name test',
+  'legs', jsonb_build_array(jsonb_build_object('to_site_id', 2, 'lines', jsonb_build_array(
+    jsonb_build_object('item_code', 'NAME-1', 'item_name', 'GLOBAL EQUATION COMPANY', 'qty', 3),
+    jsonb_build_object('item_code', 'NAME-2', 'item_name', 'Not in masterlist', 'qty', 1))))));
+select public.t_assert((select item_name from public.allocation_lines where item_code = 'NAME-1') = 'Jojo Jelly 80g', 'masterlist name wins');
+select public.t_assert((select item_name from public.allocation_lines where item_code = 'NAME-2') = 'Not in masterlist', 'plan name kept when item unknown');
+reset role;

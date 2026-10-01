@@ -121,6 +121,9 @@ export interface HeaderMatch<K extends string> {
 }
 
 /** Finds the header row (first 25 rows) that matches the most wanted columns. First matching column wins. */
+// Headers that are never an item's own name / code, even though they contain "name" or "code".
+const NOT_ITEM = /\b(supplier|vendor|brand|category|sub ?category|department|dept|group|class|company|manufacturer|store|branch|location|customer)\b/;
+
 export function detectHeader<K extends string>(rows: Grid, spec: ColumnSpec<K>, required: NoInfer<K>[]): HeaderMatch<K> | null {
   let best: HeaderMatch<K> | null = null;
   let bestScore = 0;
@@ -130,10 +133,16 @@ export function detectHeader<K extends string>(rows: Grid, spec: ColumnSpec<K>, 
     let score = 0;
     for (const key of Object.keys(spec) as K[]) {
       const syns = spec[key];
-      // exact synonym first, then "contains"
-      let idx = headers.findIndex((h) => syns.includes(h));
-      if (idx < 0) idx = headers.findIndex((h) => h !== '' && syns.some((s) => s.length > 3 && h.includes(s)));
-      if (idx >= 0 && !Object.values(cols).includes(idx)) {
+      const taken = (i: number) => Object.values(cols).includes(i);
+      const allowed = (h: string) => !(key === 'name' || key === 'code') || !NOT_ITEM.test(h);
+      // exact synonym first, in the synonym's order of preference ("item name" beats "name"), then "contains"
+      let idx = -1;
+      for (const syn of syns) {
+        idx = headers.findIndex((h, i) => h === syn && allowed(h) && !taken(i));
+        if (idx >= 0) break;
+      }
+      if (idx < 0) idx = headers.findIndex((h, i) => h !== '' && allowed(h) && !taken(i) && syns.some((s) => s.length > 3 && h.includes(s)));
+      if (idx >= 0) {
         cols[key] = idx;
         score += required.includes(key) ? 10 : 1;
       }
@@ -164,4 +173,4 @@ export function toQty(v: Cell | undefined): number | null {
 
 export const ITEM_CODE_SYNONYMS = ['item code', 'itemcode', 'variant', 'item no', 'item number', 'sku', 'code', 'variant code', 'item id', 'product code'];
 export const BARCODE_SYNONYMS = ['barcode', 'bar code', 'ean', 'upc', 'gtin'];
-export const NAME_SYNONYMS = ['item name', 'name', 'description', 'item description', 'product name', 'product', 'item'];
+export const NAME_SYNONYMS = ['item name', 'item description', 'product name', 'description', 'item desc', 'name', 'product', 'item'];

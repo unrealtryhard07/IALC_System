@@ -70,3 +70,26 @@ describe('other imports', () => {
     expect(p.lines.map((l) => [l.itemCode, l.qty])).toEqual([['1002710', 259], ['1021309', 7]]);
   });
 });
+
+describe('item name column', () => {
+  it('never takes the supplier column as the item name', () => {
+    const rows = [
+      ['Item Code', 'Barcode', 'Supplier Name', 'Description', 'STORE_NAME', 'Egaila', 'Hawally'],
+      ['1208123', '8684493000406', 'GLOBAL EQUATION COMPANY', 'Jojo Jelly Sour Licorice Strawberry 80g', 'Jahra DC', 22, 4],
+    ];
+    const p = parseAllocationGrid(rows, SITES, 'From_Jahra_DC_09-22-2026.xlsx');
+    expect(p.errors).toEqual([]);
+    expect(p.lines[0].itemName).toBe('Jojo Jelly Sour Licorice Strawberry 80g');
+  });
+  it('prefers "Item Name" over a supplier column that comes first', () => {
+    const rows = [
+      ['Variant', 'Vendor Name', 'Item Name', 'Egaila'],
+      ['1000005', 'GULF TRADING REFRIGERATING CO', 'Sheba succulent chicken breast 85g', 8],
+    ];
+    expect(parseAllocationGrid(rows, SITES, 'From_Jahra_DS.xlsx').lines[0].itemName).toBe('Sheba succulent chicken breast 85g');
+  });
+  it('leaves the name empty rather than using a supplier column', () => {
+    const rows = [['Item Code', 'Supplier Name', 'Egaila'], ['1000005', 'GULF TRADING REFRIGERATING CO', 8]];
+    expect(parseAllocationGrid(rows, SITES, 'From_Jahra_DS.xlsx').lines[0].itemName).toBe('');
+  });
+});
