@@ -7,7 +7,7 @@ import { Alert, Card, Spinner } from '../components/ui';
 import { useAuth } from '../lib/auth';
 import { fmtDate, fmtKwd, fmtQty, kwToday } from '../lib/format';
 import { fmtP, useHoData, useMetrics } from '../lib/metrics';
-import { NOTICE_ICON, type Notice } from '../lib/notices';
+import { NOTICE_ICON, noticeLabel, type Notice } from '../lib/notices';
 import { rpc } from '../lib/supabase';
 import { OldestTransfers } from './Dashboard';
 
@@ -70,7 +70,7 @@ export default function Overview() {
             {notices.map((x) => (
               <Link key={x.key} to={x.to} className="card group flex items-center gap-3 p-3.5 transition hover:border-brand-200 hover:shadow-md">
                 <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${x.tone === 'bad' ? 'bg-red-50 text-red-600' : x.tone === 'info' ? 'bg-blue-50 text-blue-600' : 'bg-brand-50 text-brand-600'}`}><Icon name={NOTICE_ICON[x.key] ?? 'alert'} /></span>
-                <span className="min-w-0 flex-1"><span className="text-xl font-semibold tabular-nums">{x.key === 'month' ? '' : x.n}</span> <span className="text-sm text-slate-600">{x.label}</span></span>
+                <span className="min-w-0 flex-1"><span className="text-xl font-semibold tabular-nums">{x.key === 'month' ? '' : x.n}</span> <span className="text-sm text-slate-600">{noticeLabel(x)}</span></span>
                 <Icon name="arrowRight" className="h-4 w-4 text-slate-300 group-hover:text-brand-500" />
               </Link>
             ))}

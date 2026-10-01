@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { rpc } from '../lib/supabase';
-import { NOTICE_ICON, type Notice } from '../lib/notices';
+import { NOTICE_ICON, noticeLabel, type Notice } from '../lib/notices';
 import { Icon } from './Icon';
 
 export function Bell() {
@@ -47,7 +47,7 @@ export function Bell() {
                     <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${x.tone === 'bad' ? 'bg-red-50 text-red-600' : x.tone === 'info' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-700'}`}>
                       <Icon name={NOTICE_ICON[x.key] ?? 'alert'} className="h-4 w-4" />
                     </span>
-                    <span className="flex-1 text-sm text-slate-700">{x.key !== 'month' && <b className="tabular-nums text-slate-900">{x.n} </b>}{x.label}</span>
+                    <span className="flex-1 text-sm text-slate-700">{x.key !== 'month' && <b className="tabular-nums text-slate-900">{x.n} </b>}{noticeLabel(x)}</span>
                     <Icon name="chevronRight" className="h-4 w-4 text-slate-300" />
                   </Link>
                 </li>

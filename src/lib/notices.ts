@@ -6,3 +6,6 @@ export const NOTICE_ICON: Record<string, IconName> = {
   approvals: 'checkCircle', backlog: 'box', late: 'clock', not_sent: 'send', gaps: 'search', dups: 'repeat', locations: 'settings', month: 'calendar',
   to_send: 'send', to_receive: 'inbox', explain: 'alert', rejected: 'x', backlog_rejected: 'box',
 };
+
+/** "1 transfers to receive" -> "1 transfer to receive" */
+export const noticeLabel = (x: Notice) => (x.n === 1 ? x.label.replace(/^([a-z]+)s\b/i, '$1') : x.label);
