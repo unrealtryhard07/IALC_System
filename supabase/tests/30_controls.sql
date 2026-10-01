@@ -165,3 +165,9 @@ set role anon;
 select public.t_expect_error($$select public.my_notifications()$$, 'permission denied');
 select public.t_expect_error($$select count(*) from public.backlog_actions$$, 'permission denied');
 reset role;
+
+-- HO bell lists problems nobody explained yet
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
+set role authenticated;
+select public.t_assert(exists (select 1 from jsonb_array_elements(public.my_notifications()) x where x->>'key' = 'unexplained'), 'HO bell: unexplained problems');
+reset role;
