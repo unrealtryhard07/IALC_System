@@ -35,7 +35,7 @@ export function Bell() {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-40 mt-2 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+        <div className="fixed inset-x-3 top-14 z-40 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80">
           <div className="border-b border-slate-100 px-4 py-2.5 text-sm font-semibold">Things to do</div>
           {items.length === 0 ? (
             <div className="flex items-center gap-2 px-4 py-5 text-sm text-slate-500"><Icon name="checkCircle" className="h-5 w-5 text-green-600" />All clear - nothing waiting for you.</div>
