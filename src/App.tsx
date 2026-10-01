@@ -1,5 +1,6 @@
 import { lazy, Suspense, type ReactNode } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import { Alert, Spinner } from './components/ui';
 import { useAuth } from './lib/auth';
@@ -39,6 +40,7 @@ function Guard({ when, children }: { when: boolean; children: ReactNode }) {
 
 export default function App() {
   const a = useAuth();
+  const loc = useLocation();
   if (!configured) {
     return (
       <div className="mx-auto max-w-xl p-8">
@@ -68,6 +70,7 @@ export default function App() {
   const storeOrAdmin = a.isAdmin || a.profile.role === 'store';
   return (
     <Layout>
+      <ErrorBoundary resetKey={loc.pathname}>
       <Suspense fallback={<Spinner />}>
         <Routes>
           <Route path="/" element={a.isHO ? <Overview /> : <Dashboard />} />
@@ -97,6 +100,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
+      </ErrorBoundary>
     </Layout>
   );
 }
