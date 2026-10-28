@@ -4,6 +4,7 @@ import { DataTable } from '../components/DataTable';
 import { Icon } from '../components/Icon';
 import { Alert, Badge, Card, Field, FileDrop, Modal, PageHeader, Spinner, Stat, Tabs } from '../components/ui';
 import { useAuth } from '../lib/auth';
+import { FEATURES } from '../lib/features';
 import { AGE_BUCKETS, ageBucket, fmtDate, fmtDateTime, fmtKwd, fmtQty, kwToday, sum } from '../lib/format';
 import { BACKLOG_ACTION, BACKLOG_STATUS, VS_STATUS } from '../lib/labels';
 import { readSpreadsheet } from '../lib/parsers/sheet';
@@ -22,7 +23,7 @@ export default function VirtualStores() {
   const [snaps, setSnaps] = useState<Snap[]>([]);
   const [actions, setActions] = useState<BacklogActionRow[]>([]);
   const [sp, setSp] = useSearchParams();
-  const view = sp.get('tab') === 'cleanup' ? 'cleanup' : 'check';
+  const view = FEATURES.oldStockCleanup && sp.get('tab') === 'cleanup' ? 'cleanup' : 'check';
   const [status, setStatus] = useState('');
   const [upload, setUpload] = useState(false);
   const [err, setErr] = useState('');
@@ -59,8 +60,8 @@ export default function VirtualStores() {
           {canUpload && <button className="btn-primary" onClick={() => setUpload(true)}><Icon name="upload" className="h-4 w-4" />Upload ERP stock report</button>}
         </>} />
       {err && <Alert tone="bad">{err}</Alert>}
-      <Tabs value={view} onChange={(v) => setSp(v === 'cleanup' ? { tab: 'cleanup' } : {}, { replace: true })}
-        tabs={[{ value: 'check', label: 'Check' }, { value: 'cleanup', label: <>Clean-up{actions.some((x) => x.status === 'pending') && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 text-xs text-amber-800">{actions.filter((x) => x.status === 'pending').length}</span>}</> }]} />
+      {FEATURES.oldStockCleanup && <Tabs value={view} onChange={(v) => setSp(v === 'cleanup' ? { tab: 'cleanup' } : {}, { replace: true })}
+        tabs={[{ value: 'check', label: 'Check' }, { value: 'cleanup', label: <>Clean-up{actions.some((x) => x.status === 'pending') && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 text-xs text-amber-800">{actions.filter((x) => x.status === 'pending').length}</span>}</> }]} />}
       {!rows ? <Spinner /> : view === 'cleanup' ? (
         <Cleanup rows={scope} actions={actions.filter((x) => loc === 'all' || x.location_code === loc)} snaps={snaps.filter((x) => loc === 'all' || x.location_code === loc)} onChanged={load} />
       ) : (

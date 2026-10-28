@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { CAT, Columns, Donut, HBars, Lines } from '../components/charts';
 import { Alert, Card, Spinner, Tabs } from '../components/ui';
 import { useAuth } from '../lib/auth';
+import { STUCK_STOCK_LINK } from '../lib/features';
 import { fmtDate, fmtKwd, fmtQty, kwToday } from '../lib/format';
 import { fmtP, lastMonths, monthLabel, pct, useHoData, useMetrics, type AccRow, type VsHist } from '../lib/metrics';
 import { AgingChart, Scorecard } from './Dashboard';
@@ -142,7 +143,7 @@ function BacklogTrend({ hist }: { hist: VsHist[] }) {
     <Card title="Stuck stock in virtual stores over time" actions={
       <div className="flex items-center gap-3">
         <div className="-mb-4"><Tabs value={metric} onChange={setMetric} tabs={[{ value: 'qty', label: 'Pieces' }, { value: 'value', label: 'Value' }, { value: 'skus', label: 'Items' }]} /></div>
-        <Link to="/virtual-stores?tab=cleanup" className="link text-sm">Clean up</Link>
+        <Link to={STUCK_STOCK_LINK.to} className="link text-sm">{STUCK_STOCK_LINK.label}</Link>
       </div>
     }>
       <p className="mb-3 text-xs text-slate-500">One point per ERP stock report uploaded. The line should go down as old stock is cleared.</p>

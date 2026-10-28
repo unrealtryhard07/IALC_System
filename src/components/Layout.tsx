@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import { FEATURES } from '../lib/features';
 import { ROLE_LABEL } from '../lib/labels';
 import { Bell } from './Bell';
 import { Icon, type IconName } from './Icon';
@@ -22,7 +23,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         { to: '/allocations', label: 'My allocations', icon: 'list', hint: 'Coming to me & sending out' },
         { to: '/upload', label: 'Upload STV', icon: 'upload', hint: 'Sent or received stock' },
         { to: '/discrepancies', label: 'Problems to explain', icon: 'alert' },
-        { to: '/virtual-stores?tab=cleanup', label: 'Old stock clean-up', icon: 'box' },
+        ...(FEATURES.oldStockCleanup ? [{ to: '/virtual-stores?tab=cleanup', label: 'Old stock clean-up', icon: 'box' as IconName }] : []),
         { to: '/stvs', label: 'My STVs', icon: 'file' },
         { to: '/help', label: 'How it works', icon: 'help' },
       ]
@@ -32,7 +33,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         { to: '/allocations', label: 'Allocation tracker', icon: 'list' },
         { to: '/in-transit', label: 'Waiting to be received', icon: 'truck' },
         { to: '/discrepancies', label: 'Problems & approvals', icon: 'alert' },
-        { to: '/virtual-stores', label: 'Stuck stock & clean-up', icon: 'box' },
+        { to: '/virtual-stores', label: FEATURES.oldStockCleanup ? 'Stuck stock & clean-up' : 'Stuck stock check', icon: 'box' },
         { to: '/month-end', label: 'Month-end close', icon: 'calendar' },
         { to: '/reports', label: 'Excel reports', icon: 'chart' },
       ];

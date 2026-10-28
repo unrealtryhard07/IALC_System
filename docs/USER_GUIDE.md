@@ -13,7 +13,7 @@ Receiving SLA: **1 day** after dispatch (Settings). Anything older turns red on 
 
 **Daily**
 1. Overview → *Needs attention* (same list as the **bell** at the top): approvals, late receiving, plans not sent,
-   old-stock decisions to approve, possible duplicate STVs, missing STV numbers.
+   possible duplicate STVs, missing STV numbers.
 2. Discrepancies → *Awaiting HO approval* → select → Approve / Reject (rejection needs a note; the store sees it).
 3. In transit → filter *Overdue* → chase the receiving stores.
 
@@ -23,15 +23,12 @@ Receiving SLA: **1 day** after dispatch (Settings). Anything older turns red on 
 2. Stores see it under *To dispatch*; the sending store opens it and prints the **Pick list** (A4, one page per destination).
 
 **Weekly**
-1. Stuck stock & clean-up → **Upload ERP stock report** for each Allocation store (Excel/CSV: item code + qty; a
+1. Stuck stock check → **Upload ERP stock report** for each Allocation store (Excel/CSV: item code + qty; a
    last-receipt date column makes ageing exact). Work the *Unknown stuck stock* and *Received, not uploaded* lists.
-2. **Clean-up** tab: approve the stores' decisions (*Waiting for approval*), decide the rest yourself, and give the
-   **Approved** Excel list to the ERP team. Each new ERP report marks items that are gone as *Cleared*; the progress
-   bar and the Dashboard trend show the backlog going down.
-3. More → **STV checks**: duplicates (same route, ±3 days, identical lines) and missing STV numbers. Void real
+2. More → **STV checks**: duplicates (same route, ±3 days, identical lines) and missing STV numbers. Void real
    duplicates; mark the rest as checked with a note.
-4. **Dashboard** → accuracy trend per store (sent exactly as planned / received in full), weekly flow, ageing, reasons.
-5. Reports → **Allocation tracker** and **Discrepancy report** in Excel.
+3. **Dashboard** → accuracy trend per store (sent exactly as planned / received in full), weekly flow, ageing, reasons.
+4. Reports → **Allocation tracker** and **Discrepancy report** in Excel.
 6. Items masterlist → upload the latest masterlist (include **cost** to get KWD values).
 
 **Monthly**
@@ -70,9 +67,6 @@ If you sent the balance later on another STV, upload that STV too – the line c
 4. **Save STV**. Anything not received stays open → Discrepancies → **Explain** (did not arrive, damaged in transit…).
 
 > Never leave stock in the Allocation store "for later". If something is wrong, receive what arrived and explain the rest.
-
-**Old stock**: *Old stock clean-up* lists items stuck in your Allocation store. Tick them, choose what happens, send
-for approval; after approval do it in the ERP.
 
 **Search**: type an STV number, AL- number, item code, barcode or name in the search box at the top (shortcut `/`).
 

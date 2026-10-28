@@ -5,6 +5,7 @@ import { HBars, Kpi } from '../components/charts';
 import { Icon } from '../components/Icon';
 import { Alert, Card, Spinner } from '../components/ui';
 import { useAuth } from '../lib/auth';
+import { STUCK_STOCK_LINK } from '../lib/features';
 import { fmtDate, fmtKwd, fmtQty, kwToday } from '../lib/format';
 import { fmtP, useHoData, useMetrics } from '../lib/metrics';
 import { NOTICE_ICON, noticeLabel, type Notice } from '../lib/notices';
@@ -82,7 +83,7 @@ export default function Overview() {
         <Card title="Open problems by type" actions={<Link to="/discrepancies" className="link text-sm">Open list</Link>}>
           <HBars rows={m.problemTypes} format={(n) => String(n)} empty="No open problems" />
         </Card>
-        <Card title="Stock stuck in virtual stores" actions={<Link to="/virtual-stores?tab=cleanup" className="link text-sm">Clean up</Link>}>
+        <Card title="Stock stuck in virtual stores" actions={<Link to={STUCK_STOCK_LINK.to} className="link text-sm">{STUCK_STOCK_LINK.label}</Link>}>
           <HBars rows={m.stuck} format={(n) => `${fmtQty(n)} pcs`} empty="Upload the ERP stock report of the Allocation stores to see this" />
           {startQty > 0 && (
             <div className="mt-4">

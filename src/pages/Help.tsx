@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Card, PageHeader } from '../components/ui';
 import { useAuth } from '../lib/auth';
+import { FEATURES } from '../lib/features';
 import { HowItWorks } from './Dashboard';
 
 function Q({ q, children }: { q: string; children: ReactNode }) {
@@ -53,9 +54,11 @@ export default function Help() {
           <Q q="How do I find an STV or an item quickly?">
             <p>Type in the search box at the top (or press <b>/</b>): an STV number, a plan number (AL-…), an item code, a barcode or part of the item name. An item page shows where that item is on its way, stuck, planned and every recent STV.</p>
           </Q>
-          <Q q="What is 'Old stock clean-up'?">
-            <p>Stock that has sat in your Allocation store for a long time. Tick the items, choose what happens (receive into the store, return to DC, write off, or investigate) and send it to head office. Once approved, make the transfer in the ERP. When the next ERP report no longer shows the item it becomes <b>Cleared</b>.</p>
-          </Q>
+          {FEATURES.oldStockCleanup && (
+            <Q q="What is 'Old stock clean-up'?">
+              <p>Stock that has sat in your Allocation store for a long time. Tick the items, choose what happens (receive into the store, return to DC, write off, or investigate) and send it to head office. Once approved, make the transfer in the ERP. When the next ERP report no longer shows the item it becomes <b>Cleared</b>.</p>
+            </Q>
+          )}
           <Q q="The upload says the month is closed.">
             <p>Head office has closed that month, so nothing dated in it can be added. Ask head office - they can reopen it.</p>
           </Q>
@@ -80,9 +83,11 @@ export default function Help() {
             <Q q="Where are the charts?">
               <p><b>Dashboard</b> has all charts: status, planned vs sent vs received, the monthly <b>accuracy trend per store</b> (sending exactly what was planned / receiving everything that was sent), weekly flow, ageing, reasons, and how the stuck stock in the virtual stores goes down over time.</p>
             </Q>
-            <Q q="How does the old stock clean-up work?">
-              <p><b>Stuck stock &amp; clean-up → Clean-up</b>. Stores (or you) decide per item; you approve in <b>Waiting for approval</b>. Your own decisions are approved at once. Download the <b>Approved</b> list for the ERP team. Every ERP report you upload afterwards moves the cleared items out and the progress bar up.</p>
-            </Q>
+            {FEATURES.oldStockCleanup && (
+              <Q q="How does the old stock clean-up work?">
+                <p><b>Stuck stock &amp; clean-up → Clean-up</b>. Stores (or you) decide per item; you approve in <b>Waiting for approval</b>. Your own decisions are approved at once. Download the <b>Approved</b> list for the ERP team. Every ERP report you upload afterwards moves the cleared items out and the progress bar up.</p>
+              </Q>
+            )}
             <Q q="What do the STV checks find?">
               <p><b>More → STV checks</b>: the same transfer uploaded twice under two numbers (same route, within 3 days, identical lines) and STV numbers missing between uploaded ones - possibly transfers nobody uploaded. If a finding is fine, mark it as checked with a note. The upload page also warns the store before a possible double upload.</p>
             </Q>
